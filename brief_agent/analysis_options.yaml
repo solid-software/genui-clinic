@@ -1,0 +1,10 @@
+# The recommended lints, not solid_lints: firebase_functions pins an analyzer
+# version solid_lints cannot share. The code still follows the app's style.
+include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    - build/**
+  language:
+    strict-casts: true
+    strict-raw-types: true

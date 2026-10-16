@@ -1,0 +1,139 @@
+# ---------------------------------------------------------------------------
+# Firebase — everything produced by the setup steps in app/README.md
+# ---------------------------------------------------------------------------
+# These files are generated per developer and per project. They carry your
+# project id, app ids and API keys. Firebase client config is not a password
+# (security comes from App Check), but committing it
+# hard-codes one person's project into the repo and guarantees merge churn
+# every time someone re-runs `flutterfire configure`.
+#
+# A tracked template lives alongside them:
+#   app/lib/firebase_options.dart.example
+
+# Step 3 — flutterfire configure
+app/lib/firebase_options.dart
+# Newer FlutterFire CLIs also write their own firebase.json next to the app;
+# the repo's Firebase configuration is the one at the root.
+app/firebase.json
+
+# Local build-time values such as the App Check debug token.
+# dart_defines.example.json is the tracked template.
+dart_defines.json
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+app/ios/firebase_app_id_file.json
+app/macos/Runner/GoogleService-Info.plist
+app/macos/firebase_app_id_file.json
+
+# firebase.json is tracked: it is the hosting configuration the repo and CI
+# deploy with, and it holds no project id or key.
+
+# Firebase CLI
+.firebaserc
+.firebase/
+*-debug.log
+firebase-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+
+# Emulator state, if you ever add it
+.firebase-emulator/
+
+# Service account keys — never commit one, under any name
+*serviceAccount*.json
+*service-account*.json
+*-adminsdk-*.json
+
+# ---------------------------------------------------------------------------
+# Secrets
+# ---------------------------------------------------------------------------
+# The App Check debug token is printed at runtime and pasted into the console,
+# so it is never written to disk. If you ever park it in a file, park it here.
+.env
+.env.*
+!.env.example
+secrets.dart
+*.keystore
+*.jks
+key.properties
+
+# ---------------------------------------------------------------------------
+# Dart & Flutter
+# ---------------------------------------------------------------------------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+*.dart.js
+*.info.json
+*.js_
+*.js.deps
+*.js.map
+coverage/
+doc/api/
+.fvm
+
+# pubspec.lock IS committed: this is an application, not a package, so a
+# reproducible dependency set is what you want.
+
+# ---------------------------------------------------------------------------
+# IDE
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+!.vscode/launch.json
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Android
+# ---------------------------------------------------------------------------
+app/android/.gradle/
+app/android/captures/
+app/android/local.properties
+app/android/key.properties
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+app/android/.cxx/
+*.apk
+*.aab
+
+# ---------------------------------------------------------------------------
+# iOS & macOS
+# ---------------------------------------------------------------------------
+**/Pods/
+**/.symlinks/
+**/Flutter/App.framework/
+**/Flutter/Flutter.framework/
+**/Flutter/Flutter.podspec
+**/Flutter/Generated.xcconfig
+**/Flutter/ephemeral/
+**/Flutter/flutter_export_environment.sh
+**/ServiceDefinitions.json
+app/ios/Runner/GeneratedPluginRegistrant.*
+app/macos/Flutter/GeneratedPluginRegistrant.swift
+app/macos/Flutter/ephemeral/
+**/xcuserdata/
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+*.mode1v3
+*.mode2v3
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ---------------------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db

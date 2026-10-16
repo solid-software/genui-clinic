@@ -1,0 +1,7 @@
+.dart_tool/
+build/
+*.local
+
+# Written by `dart compile exe` and build_runner on every deploy.
+bin/server
+functions.yaml

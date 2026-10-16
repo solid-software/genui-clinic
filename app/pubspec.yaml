@@ -1,0 +1,55 @@
+name: clinical_brief
+description: >-
+  A generative clinical dashboard: the UI for a consultation is composed by
+  an agent around the patient's complaint and rendered with GenUI (A2UI).
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.13.3 <4.0.0"
+  flutter: ">=3.47.3"
+
+dependencies:
+  a2ui_core: ^0.1.0
+  cloud_functions: ^6.5.0
+  collection: ^1.19.0
+  firebase_app_check: ^0.4.8
+  firebase_auth: ^6.7.0
+  firebase_core: ^4.1.1
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  genui: ^0.10.4
+  get_it: ^8.2.0
+  go_router: ^13.0.1
+  intl: ^0.20.2
+  json_schema_builder: ^0.1.3
+  logging: ^1.3.0
+  meta: ^1.17.0
+  shared_preferences: ^2.5.5
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  solid_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/imaging/
+    - assets/images/
+
+  # Inter 4.0, subset to Latin, Greek and common symbols; OFL in the folder.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

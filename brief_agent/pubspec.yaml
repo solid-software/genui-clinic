@@ -1,0 +1,41 @@
+name: brief_agent
+description: >-
+  The agent behind GenUI Clinic: asks Gemini for a brief in A2UI Express and
+  answers the app in A2UI JSON.
+publish_to: none
+
+environment:
+  sdk: ">=3.13.3 <4.0.0"
+  flutter: ">=3.47.3"
+
+dependencies:
+  # The pub.dev release (0.0.1-wip004) predates catalog transformers and
+  # `allowedMessages`, so this is pinned to an a2ui commit of 2026-10-05.
+  # Move to the next pub.dev release.
+  a2ui_agent:
+    git:
+      url: https://github.com/a2ui-project/a2ui.git
+      ref: 46ecc2d04793c0b8b1c77f8acd9d7ab4e34746c2
+      path: dart/a2ui_agent
+  a2ui_core: ^0.2.2
+  collection: ^1.19.0
+  firebase_functions: ^0.8.0
+  genkit: ^1.0.0
+  genkit_vertexai: ^1.0.0
+  googleapis_auth: ^2.0.0
+  google_cloud_firestore: ^0.5.5
+  http: ^1.6.0
+  json_schema_builder: ^0.1.7
+
+# a2ui_agent at that commit needs a2ui_core from the same commit.
+dependency_overrides:
+  a2ui_core:
+    git:
+      url: https://github.com/a2ui-project/a2ui.git
+      ref: 46ecc2d04793c0b8b1c77f8acd9d7ab4e34746c2
+      path: dart/a2ui_core
+
+dev_dependencies:
+  # The Firebase CLI runs it to write functions.yaml before each deploy.
+  build_runner: ^2.10.5
+  lints: ^6.0.0

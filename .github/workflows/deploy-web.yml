@@ -1,0 +1,56 @@
+# Builds the web app and publishes it to the live Firebase Hosting channel.
+name: Deploy web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One live deploy at a time; a newer commit supersedes an older one.
+concurrency:
+  group: hosting-live
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    # The Flutter app lives in app/; firebase.json stays at the repo root.
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.3
+          cache: true
+
+      # firebase_options.dart is generated per project and not committed.
+      - name: Write Firebase options
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: printf '%s' "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
+
+      - run: flutter pub get
+      - run: flutter analyze
+      # Fails if the brief agent's copy of the catalog is out of date.
+      - run: flutter test
+
+      - name: Build web
+        env:
+          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+        run: |
+          flutter build web --release \
+            --dart-define=RECAPTCHA_SITE_KEY="$RECAPTCHA_SITE_KEY"
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          channelId: live

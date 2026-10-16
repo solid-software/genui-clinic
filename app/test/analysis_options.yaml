@@ -1,0 +1,9 @@
+include: package:solid_lints/analysis_options_test.yaml
+
+# `plugins` may only appear in the root options file, so it is declared there
+# and inherited here.
+solid_lints:
+  diagnostics:
+    # Expected values are the substance of an assertion. Extracting `118` to a
+    # named constant would only restate the test's own name.
+    no_magic_number: false

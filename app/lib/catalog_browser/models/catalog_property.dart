@@ -23,8 +23,8 @@ class const CatalogProperty({
   /// Where A2UI's bindable types are defined, e.g. `DynamicString`.
   static const _dynamicType = r'/$defs/Dynamic';
 
-  /// The keys a data binding is written under: `path` on v0.9, `@path` on
-  /// v1.0.
+  /// The keys a data binding is written under: `@path` for an ordinary
+  /// dynamic value, `path` for a `ChildList` template's data source.
   static const _bindingKeys = ['path', '@path'];
 
   /// The property as a parameter: `tone?` when it may be left out.
@@ -65,8 +65,7 @@ class const CatalogProperty({
       '(${properties.map((property) => property.parameter).join(', ')})';
 
   /// Whether [schema] is an A2UI dynamic type, or offers one or a data
-  /// binding (an object with a `path` or, on v1.0, `@path`) among its
-  /// choices.
+  /// binding (an object with a `path` or `@path`) among its choices.
   static bool _isBindable(Map<String, Object?> schema) => switch (schema) {
     {r'$ref': final String type} => type.contains(_dynamicType),
     _ =>

@@ -8,8 +8,8 @@ import 'package:json_schema_builder/json_schema_builder.dart';
 /// What the medical catalog items are built from.
 abstract final class CatalogItemFactory {
   /// Sample A2UI, as a JSON array of components, for each catalog item's
-  /// name; `exampleData` has no equivalent in the new SDK, so the catalog
-  /// browser's preview feature reads this instead of the component itself.
+  /// name. The catalog browser's preview feature reads this to draw an
+  /// example of the component.
   static final Map<String, String> examples = <String, String>{};
 
   /// A catalog item built from its JSON data.

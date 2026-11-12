@@ -1,15 +1,16 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/models/measurement.dart';
 import 'package:clinical_brief/medical_catalog/widgets/measurements/measurement_row.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `MeasurementRow` component, drawn as [MeasurementRow].
 abstract final class MeasurementRowItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'MeasurementRow',
     schema: S.object(
       description:
@@ -64,7 +65,8 @@ abstract final class MeasurementRowItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) => MeasurementRow(
-    measurements: data.readList('measurements', Measurement.fromJson),
-  );
+  static Widget _build(ItemContext _, Map<String, Object?> data) =>
+      MeasurementRow(
+        measurements: data.readList('measurements', Measurement.fromJson),
+      );
 }

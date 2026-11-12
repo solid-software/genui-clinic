@@ -1,15 +1,16 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/models/lab_result.dart';
 import 'package:clinical_brief/medical_catalog/widgets/labs/lab_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `LabPanel` component, drawn as [LabPanel].
 abstract final class LabPanelItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'LabPanel',
     schema: S.object(
       description:
@@ -89,7 +90,7 @@ abstract final class LabPanelItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) => LabPanel(
+  static Widget _build(ItemContext _, Map<String, Object?> data) => LabPanel(
     title: data.readString('title'),
     source: data.readOptionalString('source'),
     normalSummary: data.readOptionalString('normalSummary'),

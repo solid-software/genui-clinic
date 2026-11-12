@@ -1,3 +1,4 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/check_in/models/complaint.dart';
 import 'package:clinical_brief/common/widgets/centered_list_view.dart';
 import 'package:clinical_brief/common/widgets/error_message.dart';
@@ -10,7 +11,6 @@ import 'package:clinical_brief/dashboard/widgets/updating_banner.dart';
 import 'package:clinical_brief/medical_catalog/motion/motion_scope.dart';
 import 'package:clinical_brief/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// The whole page, rebuilt whenever the controller changes.
 class const BriefBody({
@@ -79,9 +79,9 @@ class const BriefBody({
       MotionScope(
         key: const ValueKey('brief-motion-scope'),
         generation: surfaceId,
-        child: Surface(
+        child: A2uiSurface(
           key: ValueKey(surfaceId),
-          surfaceContext: controller.surfaceHost.contextFor(surfaceId),
+          surface: controller.surfaceHost.model.getSurface(surfaceId)!,
         ),
       ),
       if (record != null)

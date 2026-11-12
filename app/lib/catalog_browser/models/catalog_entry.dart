@@ -1,8 +1,8 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/catalog_browser/enums/catalog_origin.dart';
 import 'package:clinical_brief/catalog_browser/models/catalog_property.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:collection/collection.dart';
-import 'package:genui/genui.dart';
 import 'package:meta/meta.dart';
 
 /// One component of the catalog, as the catalog page shows it.
@@ -20,7 +20,8 @@ class const CatalogEntry({
   /// Its properties: the required ones first, each group in schema order.
   required final List<CatalogProperty> properties,
 }) {
-  /// The property GenUI adds to every schema to name the component.
+  /// The envelope key A2UI reserves to name the component; never a
+  /// declared property, but filtered out defensively.
   static const _nameKey = 'component';
 
   /// The properties as a parameter list, e.g. `(entries, tone?)`.
@@ -30,8 +31,11 @@ class const CatalogEntry({
   this;
 
   /// Reads [item]'s schema.
-  factory fromItem(CatalogItem item, {required CatalogOrigin origin}) {
-    final schema = item.dataSchema.value;
+  factory fromItem(
+    ComponentImplementation item, {
+    required CatalogOrigin origin,
+  }) {
+    final schema = item.schema.value;
 
     return CatalogEntry(
       name: item.name,

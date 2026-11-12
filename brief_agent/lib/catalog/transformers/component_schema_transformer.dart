@@ -23,6 +23,12 @@ abstract base class ComponentSchemaTransformer extends CatalogTransformer {
         ComponentApi(
           name: component.name,
           schema: Schema.fromMap(rewrite(component.schema.value)),
+          // Preserved rather than dropped: a future catalog document may
+          // populate these on a component, and losing them here would
+          // silently widen what the agent believes is allowed.
+          allowedParents: component.allowedParents,
+          allowedChildren: component.allowedChildren,
+          metadata: component.metadata,
         ) as C,
     ],
   );

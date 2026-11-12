@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/motion/motion_paint.dart';
 import 'package:clinical_brief/medical_catalog/motion/motion_scope.dart';
 import 'package:clinical_brief/medical_catalog/motion/motion_track.dart';
@@ -9,7 +12,6 @@ import 'package:clinical_brief/medical_catalog/motion/new_tag.dart';
 import 'package:clinical_brief/medical_catalog/motion/render_snapshot_boundary.dart';
 import 'package:clinical_brief/medical_catalog/motion/snapshot_boundary.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// A brief section that, on a new brief, glides from its old place, lifts
 /// in place, or grows in with a "New" tag.
@@ -28,18 +30,23 @@ class const MotionCard({
   /// Wraps a catalog section, keyed by its component type and title.
   ///
   /// An untitled one (a chart group) is keyed by its children's titles.
-  factory MotionCard.section(CatalogItemContext itemContext, Widget child) {
-    final name = switch (itemContext.data) {
-      {'title': final String title} => title,
-      {'children': final List<Object?> children} =>
-        children
-            .whereType<String>()
-            .map(
-              (id) => itemContext.getComponent(id)?.properties['title'] ?? id,
-            )
-            .join('+'),
-      _ => '',
-    };
+  factory MotionCard.section(ItemContext itemContext, Widget child) {
+    final name =
+        itemContext.props.string('title') ??
+        switch (itemContext.props.value('children')) {
+          final List<Object?> children =>
+            children
+                .whereType<ComponentNode<ComponentImplementation>>()
+                .map(
+                  (childNode) =>
+                      ComponentProps.asString(
+                        childNode.props.peek()['title'],
+                      ) ??
+                      childNode.componentId,
+                )
+                .join('+'),
+          _ => '',
+        };
 
     return MotionCard(motionKey: '${itemContext.type}:$name', child: child);
   }

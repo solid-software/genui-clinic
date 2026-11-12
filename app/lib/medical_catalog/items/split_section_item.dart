@@ -1,13 +1,14 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/split_section.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `SplitSection` component, drawn as [SplitSection].
 abstract final class SplitSectionItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.item(
+  static final ComponentImplementation item = CatalogItemFactory.item(
     name: 'SplitSection',
     schema: S.object(
       description:
@@ -40,13 +41,9 @@ abstract final class SplitSectionItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext itemContext, JsonMap data) =>
+  static Widget _build(ItemContext itemContext, Map<String, Object?> _) =>
       SplitSection(
-        primary: CatalogItemFactory.childrenOf(itemContext, data, 'primary'),
-        secondary: CatalogItemFactory.childrenOf(
-          itemContext,
-          data,
-          'secondary',
-        ),
+        primary: CatalogItemFactory.childrenOf(itemContext, 'primary'),
+        secondary: CatalogItemFactory.childrenOf(itemContext, 'secondary'),
       );
 }

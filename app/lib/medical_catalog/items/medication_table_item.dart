@@ -1,16 +1,17 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/models/medication_line.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/section_card.dart';
 import 'package:clinical_brief/medical_catalog/widgets/medications/medication_table.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `MedicationTable` component, drawn as [MedicationTable].
 abstract final class MedicationTableItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'MedicationTable',
     schema: S.object(
       description:
@@ -74,7 +75,7 @@ abstract final class MedicationTableItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) {
+  static Widget _build(ItemContext _, Map<String, Object?> data) {
     final List<MedicationLine> medications = data.readList(
       'medications',
       MedicationLine.fromJson,

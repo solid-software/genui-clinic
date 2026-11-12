@@ -1,3 +1,5 @@
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/catalog_browser/models/catalog_entry.dart';
 import 'package:clinical_brief/catalog_browser/services/catalog_previews.dart';
 import 'package:clinical_brief/catalog_browser/widgets/catalog_entry_heading.dart';
@@ -8,7 +10,6 @@ import 'package:clinical_brief/common/widgets/divided_column.dart';
 import 'package:clinical_brief/common/widgets/section_label.dart';
 import 'package:clinical_brief/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// A component opened in full: its parameters, its live preview, the A2UI
 /// that drew it, what it is for and its properties.
@@ -40,11 +41,20 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
   @override
   bool get wantKeepAlive => true;
 
+  late final Subscription _actions;
+
   @override
   void initState() {
     super.initState();
+    _actions = widget.previews.onAction.subscribe(_onAction);
     // The component open before closes, which can move this one out of view.
     WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
+  }
+
+  @override
+  void dispose() {
+    _actions.unsubscribe();
+    super.dispose();
   }
 
   @override
@@ -52,6 +62,7 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
     super.build(context);
     final theme = Theme.of(context);
     final entry = widget.entry;
+    final surface = widget.previews.surfaceOf(entry.name);
 
     return Material(
       color: theme.colorScheme.surface,
@@ -63,19 +74,17 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
           children: [
             CatalogEntryHeading(entry: entry, onClose: widget.onClose),
             const SizedBox(height: AppSpacing.lg),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Surface(
-                  surfaceContext: widget.previews.surfaceOf(entry.name),
-                  actionDelegate: const CatalogPreviewActions(),
+            if (surface != null)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: theme.scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: A2uiSurface(surface: surface),
                 ),
               ),
-            ),
             const SizedBox(height: AppSpacing.sm),
             CatalogSourceTile(
               components: widget.previews.componentsOf(entry.name),
@@ -99,6 +108,11 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
         ),
       ),
     );
+  }
+
+  void _onAction(A2uiRendererAction action) {
+    if (!mounted || action.surfaceId != widget.entry.name) return;
+    CatalogPreviewActions.show(context, action);
   }
 
   void _reveal() {

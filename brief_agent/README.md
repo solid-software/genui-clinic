@@ -47,11 +47,6 @@ The catalog document, `lib/catalog/clinical_catalog_document.g.dart`, is
 generated from the app's catalog by `app/test/agent_catalog_test.dart`. The
 agent does not start while it is the placeholder.
 
-The agent needs two features that the latest pub.dev release of a2ui_agent lacks:
-the catalog transformers and allowedMessages.
-Until a release includes them,
-a2ui_agent is pinned to an a2ui commit from 2026-10-05.
-
 ## Deploy
 
 Deploy the agent manually whenever this folder or the catalog changes,

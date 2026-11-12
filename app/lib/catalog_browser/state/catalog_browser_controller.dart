@@ -1,10 +1,11 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
+import 'package:a2ui_flutter/basic_catalog.dart';
 import 'package:clinical_brief/catalog_browser/enums/catalog_origin.dart';
 import 'package:clinical_brief/catalog_browser/models/catalog_entry.dart';
 import 'package:clinical_brief/catalog_browser/models/catalog_function_entry.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:genui/genui.dart';
 
 /// The catalog page's state: the components and functions, the search, the
 /// origin shown and the component open.
@@ -17,7 +18,7 @@ class CatalogBrowserController._(
 
   /// The catalog as the brief agent is told of it: its id, each
   /// component's schema and the functions.
-  final JsonMap json,
+  final Map<String, Object?> json,
 ) extends ChangeNotifier {
   var _query = '';
   CatalogOrigin? _origin;
@@ -50,14 +51,12 @@ class CatalogBrowserController._(
   }
 
   /// Reads [catalog]'s components and functions.
-  factory of(Catalog catalog) {
-    final basicNames = BasicCatalogItems.asCatalog().items
-        .map((item) => item.name)
-        .toSet();
+  factory of(CatalogImplementation catalog) {
+    final basicNames = BasicComponents.all.map((item) => item.name).toSet();
 
     return CatalogBrowserController._(
       List.unmodifiable(
-        catalog.items
+        catalog.components.values
             .map(
               (item) => CatalogEntry.fromItem(
                 item,
@@ -67,9 +66,9 @@ class CatalogBrowserController._(
             .sortedBy((entry) => entry.origin.index),
       ),
       List.unmodifiable(
-        catalog.functions.map(CatalogFunctionEntry.fromFunction),
+        catalog.functions.values.map(CatalogFunctionEntry.fromFunction),
       ),
-      catalog.toCapabilitiesJson(),
+      catalog.toJson(),
     );
   }
 

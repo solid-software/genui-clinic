@@ -1,14 +1,13 @@
 import 'package:clinical_brief/catalog_browser/widgets/catalog_json_block.dart';
 import 'package:clinical_brief/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// The A2UI a preview was drawn from, folded away until asked for.
 class const CatalogSourceTile({
   super.key,
 
   /// The components the preview's surface was sent.
-  required final List<JsonMap> components,
+  required final List<Map<String, Object?>> components,
 }) extends StatelessWidget {
   /// Creates the tile.
   this;

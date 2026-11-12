@@ -1,15 +1,16 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/widgets/imaging/xray_image.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/section_card.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `XRayImage` component, drawn as [XRayImage].
 abstract final class XRayImageItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'XRayImage',
     schema: S.object(
       description:
@@ -53,7 +54,7 @@ abstract final class XRayImageItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) => SectionCard(
+  static Widget _build(ItemContext _, Map<String, Object?> data) => SectionCard(
     icon: Icons.image_outlined,
     title: data.readString('title'),
     caption: data.readOptionalString('caption'),

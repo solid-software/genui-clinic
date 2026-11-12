@@ -67,18 +67,27 @@ Write the catalog document if the app's catalog changed, and once now. From
 UPDATE_AGENT_CATALOG=1 flutter test test/agent_catalog_test.dart
 ```
 
-Then, from the repo root, where `firebase.json` is:
+`bin/server.dart` registers two functions from the same code: `briefagent`,
+which the live app calls, and `briefagent-staging`, which the staging site
+calls (see [the app's README](../app/README.md)). They deploy and update
+independently, so deploying one never touches the other. From the repo root,
+where `firebase.json` is, deploy only the one you mean to update:
 
 ```bash
-firebase deploy --only functions --project clinical-brief
+firebase deploy --only functions:briefagent --project clinical-brief
+# or
+firebase deploy --only functions:briefagent-staging --project clinical-brief
 ```
 
+`firebase deploy --only functions` (with no function named) deploys both at
+once; use that only when you mean to update both.
+
 The CLI compiles the agent on your machine and uploads it to Cloud Run;
-answer yes if it asks to enable APIs. The Function URL it prints should be
-`https://briefagent-<project number>.europe-west1.run.app`, which is where
-the app sends its requests. Dart functions do not show in the Firebase
-console yet: find `briefagent`, its logs included, under Cloud Run in the
-Google Cloud console.
+answer yes if it asks to enable APIs. A function's URL is
+`https://<name>-<project number>.europe-west1.run.app`, which is where the
+app (or the staging site) sends its requests. Dart functions do not show in
+the Firebase console yet: find each one, its logs included, under Cloud Run
+in the Google Cloud console.
 
 After the first deploy, once, let the agent's service account call Gemini
 (the project number is on the Firebase project settings page):

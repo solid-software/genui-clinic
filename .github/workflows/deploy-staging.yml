@@ -1,13 +1,6 @@
 # Builds the `staging` branch and publishes it to the staging site,
 # https://clinical-brief-staging.web.app: a second Hosting site in the same
-# Firebase project, with a fixed URL that never expires. It talks to
-# `briefagent-staging`, a Cloud Function deployed and updated independently
-# of the live `briefagent` (see brief_agent/bin/server.dart), so staging
-# testing never touches production.
-#
-# Pull requests are merged into `staging` first, then `staging` into `main`,
-# which deploy-web.yml publishes to https://clinical-brief.web.app. This
-# workflow never deploys to that live site.
+# Firebase project, using `briefagent-staging` backend.
 name: Deploy staging
 
 on:
@@ -23,99 +16,10 @@ concurrency:
   group: hosting-staging
   cancel-in-progress: true
 
-env:
-  # Created once with `firebase hosting:sites:create clinical-brief-staging`.
-  STAGING_SITE: clinical-brief-staging
-  # The live address web/index.html gives in its link-preview tags.
-  LIVE_ORIGIN: https://genui-clinic.solid.software
-
 jobs:
   deploy:
-    name: Build and deploy to staging
-    runs-on: ubuntu-latest
-    # The Flutter app lives in app/; firebase.json stays at the repo root.
-    defaults:
-      run:
-        working-directory: app
-    steps:
-      # The same build as deploy-web.yml.
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.47.3
-          cache: true
-
-      - name: Write Firebase options
-        env:
-          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
-        run: printf '%s' "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
-
-      - run: flutter pub get
-      - run: flutter analyze
-      # Fails if the brief agent's copy of the catalog is out of date.
-      - run: flutter test
-
-      - name: Build web
-        env:
-          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
-        run: |
-          flutter build web --release \
-            --dart-define=RECAPTCHA_SITE_KEY="$RECAPTCHA_SITE_KEY" \
-            --dart-define=BRIEF_AGENT_FUNCTION=briefagent-staging
-
-      # Crawlers need absolute URLs, so the preview tags name the live site,
-      # and a staging link would show the live image. Only this build's
-      # copy is changed to name the staging site.
-      - name: Point link previews at the staging site
-        run: |
-          set -euo pipefail
-          page=build/web/index.html
-          if ! grep -qF "$LIVE_ORIGIN/og-image.png" "$page"; then
-            echo "::error::$page has no $LIVE_ORIGIN/og-image.png; update LIVE_ORIGIN."
-            exit 1
-          fi
-          sed -i "s#$LIVE_ORIGIN/#https://$STAGING_SITE.web.app/#g" "$page"
-          grep -F 'og:' "$page"
-
-      # firebase.json names no site, so a plain deploy goes to the live one.
-      # Here only, in this run's copy, it names the staging site; the
-      # committed file, and so deploy-web.yml, stay as they are.
-      - name: Point the deploy at the staging site
-        working-directory: .
-        env:
-          PROJECT: ${{ vars.FIREBASE_PROJECT_ID }}
-        run: |
-          set -euo pipefail
-          case "$STAGING_SITE" in
-            *-staging) ;;
-            *)
-              echo "::error::'$STAGING_SITE' does not look like a staging site."
-              exit 1
-              ;;
-          esac
-          if [ "$STAGING_SITE" = "$PROJECT" ]; then
-            echo "::error::'$STAGING_SITE' is the live site."
-            exit 1
-          fi
-          jq --arg site "$STAGING_SITE" '.hosting.site = $site' firebase.json \
-            > firebase.staging.json
-          mv firebase.staging.json firebase.json
-          jq -e --arg site "$STAGING_SITE" '.hosting.site == $site' firebase.json \
-            > /dev/null
-
-      # `target` makes it `firebase deploy --only hosting:<site>`: had the
-      # step above not taken, the CLI would find no such site and stop,
-      # instead of deploying to live. `live` is the staging site's own
-      # permanent channel.
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
-          channelId: live
-          target: ${{ env.STAGING_SITE }}
-
-      - name: Show the URL
-        working-directory: .
-        run: echo "Deployed to https://$STAGING_SITE.web.app" >> "$GITHUB_STEP_SUMMARY"
+    uses: ./.github/workflows/build-and-deploy.yml
+    with:
+      hosting-site: clinical-brief-staging
+      brief-agent-function: briefagent-staging
+    secrets: inherit

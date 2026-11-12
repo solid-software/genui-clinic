@@ -1,13 +1,14 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/chart_grid.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `ChartGroup` component, drawn as [ChartGrid].
 abstract final class ChartGroupItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'ChartGroup',
     schema: S.object(
       description:
@@ -59,8 +60,8 @@ abstract final class ChartGroupItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext itemContext, JsonMap data) =>
+  static Widget _build(ItemContext itemContext, Map<String, Object?> _) =>
       ChartGrid(
-        children: CatalogItemFactory.childrenOf(itemContext, data, 'children'),
+        children: CatalogItemFactory.childrenOf(itemContext, 'children'),
       );
 }

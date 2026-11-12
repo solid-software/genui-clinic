@@ -1,5 +1,4 @@
 import 'package:clinical_brief/common/utils/json_reader.dart';
-import 'package:genui/genui.dart';
 import 'package:meta/meta.dart';
 
 /// One property of a catalog component, or argument of a catalog function,
@@ -24,6 +23,10 @@ class const CatalogProperty({
   /// Where A2UI's bindable types are defined, e.g. `DynamicString`.
   static const _dynamicType = r'/$defs/Dynamic';
 
+  /// The keys a data binding is written under: `@path` for an ordinary
+  /// dynamic value, `path` for a `ChildList` template's data source.
+  static const _bindingKeys = ['path', '@path'];
+
   /// The property as a parameter: `tone?` when it may be left out.
   String get parameter => isRequired ? name : '$name?';
 
@@ -33,7 +36,7 @@ class const CatalogProperty({
   /// The property [name], as [schema] describes it.
   factory fromSchema(
     String name,
-    JsonMap schema, {
+    Map<String, Object?> schema, {
     required bool isRequired,
   }) => CatalogProperty(
     name: name,
@@ -43,7 +46,7 @@ class const CatalogProperty({
   );
 
   /// The properties of the object [schema] describes, in schema order.
-  static List<CatalogProperty> listOf(JsonMap schema) {
+  static List<CatalogProperty> listOf(Map<String, Object?> schema) {
     final properties = schema.readObject('properties');
     final required = schema.readStringList('required');
 
@@ -62,8 +65,8 @@ class const CatalogProperty({
       '(${properties.map((property) => property.parameter).join(', ')})';
 
   /// Whether [schema] is an A2UI dynamic type, or offers one or a data
-  /// binding (an object with a `path`) among its choices.
-  static bool _isBindable(JsonMap schema) => switch (schema) {
+  /// binding (an object with a `path` or `@path`) among its choices.
+  static bool _isBindable(Map<String, Object?> schema) => switch (schema) {
     {r'$ref': final String type} => type.contains(_dynamicType),
     _ =>
       _choiceKeys
@@ -71,7 +74,9 @@ class const CatalogProperty({
           .any(
             (choice) =>
                 _isBindable(choice) ||
-                choice.readObject('properties').containsKey('path'),
+                _bindingKeys.any(
+                  choice.readObject('properties').containsKey,
+                ),
           ),
   };
 }

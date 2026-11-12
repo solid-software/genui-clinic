@@ -1,5 +1,5 @@
+import 'package:a2ui_core/a2ui_core.dart';
 import 'package:clinical_brief/catalog_browser/models/catalog_property.dart';
-import 'package:genui/genui.dart';
 import 'package:meta/meta.dart';
 
 /// One function the catalog's components can call, as the catalog page
@@ -23,9 +23,9 @@ class const CatalogFunctionEntry({
   this;
 
   /// Reads [function]'s argument schema.
-  factory fromFunction(ClientFunction function) => CatalogFunctionEntry(
+  factory fromFunction(FunctionApi function) => CatalogFunctionEntry(
     name: function.name,
-    description: function.description,
+    description: function.description ?? '',
     arguments: CatalogProperty.listOf(function.argumentSchema.value),
   );
 }

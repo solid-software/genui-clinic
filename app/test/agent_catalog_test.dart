@@ -41,7 +41,7 @@ abstract final class _AgentCatalog {
   static String source() {
     final String json = const JsonEncoder.withIndent(
       '  ',
-    ).convert(MedicalCatalog.build().toCapabilitiesJson());
+    ).convert(MedicalCatalog.build().toJson());
     if (json.contains(_quote)) {
       throw StateError('The catalog contains $_quote; it cannot be embedded.');
     }

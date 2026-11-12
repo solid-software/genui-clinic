@@ -1,9 +1,10 @@
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/catalog_browser/models/catalog_entry.dart';
 import 'package:clinical_brief/catalog_browser/widgets/catalog_origin_badge.dart';
 import 'package:clinical_brief/catalog_browser/widgets/catalog_thumbnail.dart';
 import 'package:clinical_brief/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// A component in the grid: its live preview over its name. A tap opens it.
 class const CatalogCard({
@@ -12,8 +13,8 @@ class const CatalogCard({
   /// The component.
   required final CatalogEntry entry,
 
-  /// The surface drawing it.
-  required final SurfaceContext surface,
+  /// The surface drawing it, or `null` without one.
+  required final SurfaceModel<ComponentImplementation>? surface,
 
   /// Called when the card is tapped.
   required final VoidCallback onOpen,

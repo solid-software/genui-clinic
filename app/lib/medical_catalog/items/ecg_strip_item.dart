@@ -1,15 +1,16 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/widgets/ecg/ecg_strip.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/section_card.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `EcgStrip` component, drawn as [EcgStrip].
 abstract final class EcgStripItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'EcgStrip',
     schema: S.object(
       description:
@@ -56,7 +57,7 @@ abstract final class EcgStripItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) => SectionCard(
+  static Widget _build(ItemContext _, Map<String, Object?> data) => SectionCard(
     icon: Icons.monitor_heart_outlined,
     title: _title,
     caption: data.readOptionalString('caption'),

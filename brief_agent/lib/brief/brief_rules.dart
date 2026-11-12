@@ -80,6 +80,9 @@ abstract final class BriefRules {
       catalogId: create.catalogId,
       theme: create.theme,
       sendDataModel: create.sendDataModel,
+      components: create.components,
+      dataModel: create.dataModel,
+      metadata: create.metadata,
     ),
     final UpdateComponentsMessage update => UpdateComponentsMessage(
       version: update.version,

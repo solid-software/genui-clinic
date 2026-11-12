@@ -1,16 +1,17 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/models/clinical_tone.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/models/fact_entry.dart';
 import 'package:clinical_brief/medical_catalog/widgets/safety/safety_banner.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `SafetyBanner` component, drawn as [SafetyBanner].
 abstract final class SafetyBannerItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'SafetyBanner',
     schema: S.object(
       description:
@@ -61,8 +62,9 @@ abstract final class SafetyBannerItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) => SafetyBanner(
-    entries: data.readList('entries', FactEntry.fromJson),
-    tone: ClinicalTone.fromWire(data['tone']),
-  );
+  static Widget _build(ItemContext _, Map<String, Object?> data) =>
+      SafetyBanner(
+        entries: data.readList('entries', FactEntry.fromJson),
+        tone: ClinicalTone.fromWire(data['tone']),
+      );
 }

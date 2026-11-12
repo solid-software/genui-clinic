@@ -1,0 +1,87 @@
+# Builds the Flutter web app and deploys it to Firebase Hosting. Called by
+# deploy-web.yml (the live site) and deploy-staging.yml (a second site in the
+# same Firebase project); never runs on its own.
+name: Build and deploy
+
+on:
+  workflow_call:
+    inputs:
+      hosting-site:
+        description: >-
+          A Hosting site id other than the project's default, e.g.
+          clinical-brief-staging. Leave unset to deploy the default (live)
+          site.
+        type: string
+        default: ''
+      brief-agent-function:
+        description: >-
+          The briefagent Cloud Function to call, e.g. briefagent-staging.
+          Leave unset to use the default, briefagent.
+        type: string
+        default: ''
+    secrets:
+      FIREBASE_OPTIONS_DART:
+        required: true
+      RECAPTCHA_SITE_KEY:
+        required: true
+      FIREBASE_SERVICE_ACCOUNT:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    # The Flutter app lives in app/; firebase.json stays at the repo root.
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.3
+          cache: true
+
+      # firebase_options.dart is generated per project and not committed.
+      - name: Write Firebase options
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+        run: printf '%s' "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
+
+      - run: flutter pub get
+      - run: flutter analyze
+      # Fails if the brief agent's copy of the catalog is out of date.
+      - run: flutter test
+
+      - name: Build web
+        env:
+          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+          BRIEF_AGENT_FUNCTION: ${{ inputs.brief-agent-function }}
+        run: |
+          flutter build web --release \
+            --dart-define=RECAPTCHA_SITE_KEY="$RECAPTCHA_SITE_KEY" \
+            ${BRIEF_AGENT_FUNCTION:+--dart-define=BRIEF_AGENT_FUNCTION="$BRIEF_AGENT_FUNCTION"}
+
+      # firebase.json names no site, so a plain deploy goes to the live one.
+      # Here only, in this run's copy, it names a different site; the
+      # committed file stays as it is.
+      - name: Point the deploy at hosting-site
+        if: inputs.hosting-site != ''
+        working-directory: .
+        run: |
+          set -euo pipefail
+          jq --arg site "${{ inputs.hosting-site }}" '.hosting.site = $site' firebase.json \
+            > firebase.tmp.json
+          mv firebase.tmp.json firebase.json
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          channelId: live
+          target: ${{ inputs.hosting-site }}

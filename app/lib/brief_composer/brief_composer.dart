@@ -1,12 +1,14 @@
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
+import 'package:clinical_brief/brief_composer/conversation_event.dart';
 import 'package:clinical_brief/check_in/models/clinical_record.dart';
 import 'package:clinical_brief/check_in/models/complaint.dart';
 import 'package:clinical_brief/check_in/models/patient.dart';
-import 'package:genui/genui.dart';
 
 /// Composes one consultation's brief; refinements are follow-up turns.
 abstract interface class BriefComposer {
-  /// The host the dashboard screen renders surfaces from.
-  SurfaceHost get surfaceHost;
+  /// The processor the dashboard screen renders surfaces from.
+  MessageProcessor<ComponentImplementation> get surfaceHost;
 
   /// Surface lifecycle, text and error events from the conversation.
   Stream<ConversationEvent> get events;

@@ -1,3 +1,4 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/check_in/models/complaint.dart';
 import 'package:clinical_brief/common/widgets/centered_list_view.dart';
 import 'package:clinical_brief/common/widgets/error_message.dart';
@@ -10,7 +11,6 @@ import 'package:clinical_brief/dashboard/widgets/updating_banner.dart';
 import 'package:clinical_brief/medical_catalog/motion/motion_scope.dart';
 import 'package:clinical_brief/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// The whole page, rebuilt whenever the controller changes.
 class const BriefBody({
@@ -54,14 +54,11 @@ class const BriefBody({
   /// Below the header: a placeholder, then the brief and the full record.
   List<Widget> _briefSections() {
     final surfaceId = controller.activeSurfaceId;
-    if (surfaceId == null) {
-      return [
-        if (controller.isComposing || controller.errorMessage == null)
-          BriefProgress(
-            title: 'Composing the brief',
-            detail: _waitingDetail(controller.complaint),
-          ),
-      ];
+    final surface = surfaceId == null
+        ? null
+        : controller.surfaceHost.model.getSurface(surfaceId);
+    if (surfaceId == null || surface == null) {
+      return _composingPlaceholder();
     }
     final record = controller.record;
 
@@ -79,10 +76,7 @@ class const BriefBody({
       MotionScope(
         key: const ValueKey('brief-motion-scope'),
         generation: surfaceId,
-        child: Surface(
-          key: ValueKey(surfaceId),
-          surfaceContext: controller.surfaceHost.contextFor(surfaceId),
-        ),
+        child: A2uiSurface(key: ValueKey(surfaceId), surface: surface),
       ),
       if (record != null)
         FullRecordSection(
@@ -91,6 +85,15 @@ class const BriefBody({
         ),
     ];
   }
+
+  /// Shown before the brief has a surface to draw.
+  List<Widget> _composingPlaceholder() => [
+    if (controller.isComposing || controller.errorMessage == null)
+      BriefProgress(
+        title: 'Composing the brief',
+        detail: _waitingDetail(controller.complaint),
+      ),
+  ];
 
   /// Progress text naming the newest finding, or the complaint if none.
   static String _waitingDetail(Complaint complaint) => complaint.addenda.isEmpty

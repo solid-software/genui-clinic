@@ -1,14 +1,15 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/section_grid.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `SectionGrid` component, drawn as [SectionGrid].
 abstract final class SectionGridItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.item(
+  static final ComponentImplementation item = CatalogItemFactory.item(
     name: 'SectionGrid',
     schema: S.object(
       description:
@@ -45,9 +46,9 @@ abstract final class SectionGridItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext itemContext, JsonMap data) =>
+  static Widget _build(ItemContext itemContext, Map<String, Object?> data) =>
       SectionGrid(
         widths: data.readIntList('widths'),
-        sections: CatalogItemFactory.childrenOf(itemContext, data, 'sections'),
+        sections: CatalogItemFactory.childrenOf(itemContext, 'sections'),
       );
 }

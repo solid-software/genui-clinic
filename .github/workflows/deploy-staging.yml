@@ -1,0 +1,25 @@
+# Builds the `staging` branch and publishes it to the staging site,
+# https://clinical-brief-staging.web.app: a second Hosting site in the same
+# Firebase project, using `briefagent-staging` backend.
+name: Deploy staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One staging deploy at a time; a newer commit supersedes an older one.
+concurrency:
+  group: hosting-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/build-and-deploy.yml
+    with:
+      hosting-site: clinical-brief-staging
+      brief-agent-function: briefagent-staging
+    secrets: inherit

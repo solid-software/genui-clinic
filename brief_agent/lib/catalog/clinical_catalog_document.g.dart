@@ -8,76 +8,85 @@ abstract final class ClinicalCatalogDocument {
   /// The document, as JSON.
   static const String json = r'''
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "protocolVersion": "1.0",
   "catalogId": "com.clinicalbrief.catalog.v1",
+  "instructions": "For layout, use the Row and Column components to organize other components.\n\n## Catalog Guidelines\n\n1. String Concatenation & Formatting: A2UI does not support binary operators like '+' or formatting symbols. To concatenate strings or dynamically inject data bindings into text, you must use the catalog function `formatString(value)` where the value string contains placeholders formatted as `${expression}`:\n   formatString(\"Hello ${/user/name}\")\n\n2. Strict Hierarchy: You must strictly adhere to the requested component nesting and hierarchy. If the prompt specifies that a component is 'inside' or 'contained in' another component, you MUST place it as a child of that specific component, not as a sibling or in a different container.\n\n3. Validation Checks: When components support validation checks, specify any custom error messages directly as the 'message' inside the check. Do NOT create separate text-display components to display validation errors.\n\n## Examples\n\nExample 1: Dynamic text form\n```json\n[\n  {\n    \"version\": \"1.0\",\n    \"createSurface\": {\n      \"surfaceId\": \"main\",\n      \"catalogId\": \"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json\",\n      \"components\": [\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\"repField\", \"valueField\"]\n        },\n        {\n          \"id\": \"repField\",\n          \"component\": \"TextField\",\n          \"label\": \"Representative\",\n          \"value\": {\"@path\": \"/form/rep\"},\n          \"placeholder\": \"Enter name\"\n        },\n        {\n          \"id\": \"valueField\",\n          \"component\": \"TextField\",\n          \"label\": \"Deal Value\",\n          \"value\": {\"@path\": \"/form/value\"},\n          \"placeholder\": \"0.00\",\n          \"variant\": \"number\",\n          \"checks\": [\n            {\n              \"condition\": {\n                \"@call\": \"required\",\n                \"args\": {\"value\": {\"@path\": \"/form/value\"}}\n              },\n              \"message\": \"Deal value is required.\"\n            }\n          ]\n        }\n      ],\n      \"dataModel\": {\n        \"form\": {\n          \"rep\": \"John Doe\",\n          \"value\": 1500.00\n        }\n      }\n    }\n  }\n]\n```\n\nExample 2: Dynamic list with templates\n```json\n[\n  {\n    \"version\": \"1.0\",\n    \"createSurface\": {\n      \"surfaceId\": \"main\",\n      \"catalogId\": \"https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json\",\n      \"components\": [\n        {\n          \"id\": \"root\",\n          \"component\": \"Card\",\n          \"child\": \"breedList\"\n        },\n        {\n          \"id\": \"breedList\",\n          \"component\": \"List\",\n          \"children\": {\n            \"path\": \"/breeds\",\n            \"componentId\": \"breedTemplate\"\n          },\n          \"direction\": \"horizontal\"\n        },\n        {\n          \"id\": \"breedTemplate\",\n          \"component\": \"Image\",\n          \"url\": {\"@path\": \"url\"}\n        }\n      ],\n      \"dataModel\": {\n        \"breeds\": [\n          {\n            \"url\": \"https://example.com/poodle.jpg\"\n          },\n          {\n            \"url\": \"https://example.com/lab.jpg\"\n          }\n        ]\n      }\n    }\n  }\n]\n```",
   "components": {
     "Button": {
       "type": "object",
-      "description": "An interactive button that triggers an action when pressed.",
-      "properties": {
-        "child": {
-          "type": "string",
-          "description": "The ID of a child widget. This should always be set, e.g. to the ID of a `Text` widget."
+      "allOf": [
+        {
+          "$ref": "common_types.json#/$defs/Checkable"
         },
-        "action": {
-          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/Action"
-        },
-        "variant": {
-          "type": "string",
-          "description": "A hint for the button style.",
-          "enum": [
-            "primary",
-            "borderless"
-          ]
-        },
-        "checks": {
-          "type": "array",
-          "description": "Validation rules for this component.",
-          "items": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/CheckRule"
-          }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "Button"
+        {
+          "type": "object",
+          "properties": {
+            "component": {
+              "const": "Button"
+            },
+            "child": {
+              "$ref": "common_types.json#/$defs/Child",
+              "description": "The ID of the child component. Use a 'Text' component for a labeled button. Only use an 'Icon' if the requirements explicitly ask for an icon-only button."
+            },
+            "variant": {
+              "type": "string",
+              "description": "A hint for the button style. If omitted, a default button style is used. 'primary' indicates this is the main call-to-action button. 'borderless' means the button has no visual border or background, making its child content appear like a clickable link.",
+              "enum": [
+                "default",
+                "primary",
+                "borderless"
+              ],
+              "default": "default"
+            },
+            "action": {
+              "$ref": "common_types.json#/$defs/Action"
+            },
+            "weight": {
+              "$ref": "#/$defs/Weight"
+            }
+          },
+          "required": [
+            "component",
+            "child",
+            "action"
           ]
         }
-      },
-      "required": [
-        "component",
-        "child",
-        "action"
-      ],
-      "additionalProperties": true
+      ]
     },
     "Card": {
       "type": "object",
-      "description": "A visual container (card) that groups a single child widget.",
       "properties": {
-        "child": {
-          "type": "string",
-          "description": "The ID of a component."
-        },
         "component": {
-          "type": "string",
-          "enum": [
-            "Card"
-          ]
+          "const": "Card"
+        },
+        "child": {
+          "$ref": "common_types.json#/$defs/Child",
+          "description": "The ID of the single child component to be rendered inside the card. To display multiple elements, you MUST wrap them in a layout component (like Column or Row) and pass that container's ID here. Do NOT pass multiple IDs or a non-existent ID."
+        },
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component",
         "child"
-      ],
-      "additionalProperties": true
+      ]
     },
     "Column": {
       "type": "object",
-      "description": "A layout widget that arranges its children vertically.",
+      "description": "A layout component that arranges its children vertically. To create a grid layout, nest Rows within this Column.",
       "properties": {
+        "component": {
+          "const": "Column"
+        },
+        "children": {
+          "description": "Defines the children. Use an array of strings for a fixed set of children, or a template object to generate children from a data list. Children cannot be defined inline, they must be referred to by ID.",
+          "$ref": "common_types.json#/$defs/ChildList"
+        },
         "justify": {
           "type": "string",
-          "description": "How children are aligned on the main axis. ",
+          "description": "Defines the arrangement of children along the main axis (vertically). Use 'spaceBetween' to push items to the edges (e.g. header at top, footer at bottom), or 'start'/'end'/'center' to pack them together.",
           "enum": [
             "start",
             "center",
@@ -86,329 +95,262 @@ abstract final class ClinicalCatalogDocument {
             "spaceAround",
             "spaceEvenly",
             "stretch"
-          ]
+          ],
+          "default": "start"
         },
         "align": {
           "type": "string",
-          "description": "How children are aligned on the cross axis. ",
+          "description": "Defines the alignment of children along the cross axis (horizontally). This is similar to the CSS 'align-items' property.",
           "enum": [
-            "start",
             "center",
             "end",
+            "start",
             "stretch"
-          ]
+          ],
+          "default": "stretch"
         },
-        "children": {
-          "description": "Either an explicit list of widget IDs for the children, or a template with a data binding to the list of children.",
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "description": "Component ID"
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "componentId": {
-                  "type": "string",
-                  "description": "The ID of a component."
-                },
-                "path": {
-                  "type": "string",
-                  "description": "A relative or absolute path in the data model."
-                }
-              },
-              "required": [
-                "componentId",
-                "path"
-              ]
-            }
-          ]
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "Column"
-          ]
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component",
         "children"
-      ],
-      "additionalProperties": true
+      ]
     },
     "Divider": {
       "type": "object",
-      "description": "A thin horizontal or vertical line used to separate content.",
       "properties": {
+        "component": {
+          "const": "Divider"
+        },
         "axis": {
           "type": "string",
+          "description": "The orientation of the divider.",
           "enum": [
             "horizontal",
             "vertical"
-          ]
+          ],
+          "default": "horizontal"
         },
-        "component": {
-          "type": "string",
-          "enum": [
-            "Divider"
-          ]
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component"
-      ],
-      "additionalProperties": true
+      ]
     },
     "Icon": {
       "type": "object",
-      "description": "Displays an icon from a set of available icons.",
       "properties": {
+        "component": {
+          "const": "Icon"
+        },
         "name": {
-          "description": "The name of the icon to display. This can be a literal string or a reference to a value in the data model ('path', e.g. '/icon/name').",
-          "allOf": [
+          "description": "The name of the icon to display.",
+          "oneOf": [
             {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+              "type": "string",
+              "enum": [
+                "accountCircle",
+                "add",
+                "arrowBack",
+                "arrowForward",
+                "attachFile",
+                "calendarToday",
+                "call",
+                "camera",
+                "check",
+                "close",
+                "delete",
+                "download",
+                "edit",
+                "event",
+                "error",
+                "fastForward",
+                "favorite",
+                "favoriteOff",
+                "folder",
+                "help",
+                "home",
+                "info",
+                "locationOn",
+                "lock",
+                "lockOpen",
+                "mail",
+                "menu",
+                "moreVert",
+                "moreHoriz",
+                "notificationsOff",
+                "notifications",
+                "pause",
+                "payment",
+                "person",
+                "phone",
+                "photo",
+                "play",
+                "print",
+                "refresh",
+                "rewind",
+                "search",
+                "send",
+                "settings",
+                "share",
+                "shoppingCart",
+                "skipNext",
+                "skipPrevious",
+                "star",
+                "starHalf",
+                "starOff",
+                "stop",
+                "upload",
+                "visibility",
+                "visibilityOff",
+                "volumeDown",
+                "volumeMute",
+                "volumeOff",
+                "volumeUp",
+                "warning"
+              ]
             },
             {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "accountCircle",
-                    "add",
-                    "arrowBack",
-                    "arrowForward",
-                    "attachFile",
-                    "calendarToday",
-                    "call",
-                    "camera",
-                    "check",
-                    "close",
-                    "delete",
-                    "download",
-                    "edit",
-                    "error",
-                    "event",
-                    "favorite",
-                    "favoriteOff",
-                    "folder",
-                    "help",
-                    "home",
-                    "info",
-                    "locationOn",
-                    "lock",
-                    "lockOpen",
-                    "mail",
-                    "menu",
-                    "moreHoriz",
-                    "moreVert",
-                    "notifications",
-                    "notificationsOff",
-                    "payment",
-                    "person",
-                    "phone",
-                    "photo",
-                    "print",
-                    "refresh",
-                    "search",
-                    "send",
-                    "settings",
-                    "share",
-                    "shoppingCart",
-                    "star",
-                    "starHalf",
-                    "starOff",
-                    "upload",
-                    "visibility",
-                    "visibilityOff",
-                    "warning"
-                  ]
-                },
-                {
-                  "type": "object"
+              "type": "object",
+              "properties": {
+                "svgPath": {
+                  "$ref": "common_types.json#/$defs/DynamicString"
                 }
-              ]
+              },
+              "required": [
+                "svgPath"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
             }
           ]
         },
-        "component": {
-          "type": "string",
-          "enum": [
-            "Icon"
-          ]
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component",
         "name"
-      ],
-      "additionalProperties": true
+      ]
     },
     "List": {
       "type": "object",
-      "description": "A scrollable list of child widgets.",
       "properties": {
+        "component": {
+          "const": "List"
+        },
         "children": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "description": "Component ID"
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "componentId": {
-                  "type": "string",
-                  "description": "The ID of a component."
-                },
-                "path": {
-                  "type": "string",
-                  "description": "A relative or absolute path in the data model."
-                }
-              },
-              "required": [
-                "componentId",
-                "path"
-              ]
-            }
-          ]
+          "description": "Defines the children. Use an array of strings for a fixed set of children, or a template object to generate children from a data list.",
+          "$ref": "common_types.json#/$defs/ChildList"
         },
         "direction": {
           "type": "string",
+          "description": "The direction in which the list items are laid out.",
           "enum": [
             "vertical",
             "horizontal"
-          ]
+          ],
+          "default": "vertical"
         },
         "align": {
           "type": "string",
+          "description": "Defines the alignment of children along the cross axis.",
           "enum": [
             "start",
             "center",
             "end",
             "stretch"
-          ]
+          ],
+          "default": "stretch"
         },
-        "component": {
-          "type": "string",
-          "enum": [
-            "List"
-          ]
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component",
         "children"
-      ],
-      "additionalProperties": true
+      ]
     },
     "Row": {
       "type": "object",
-      "description": "A layout widget that arranges its children horizontally.",
+      "description": "A layout component that arranges its children horizontally. To create a grid layout, nest Columns within this Row.",
       "properties": {
+        "component": {
+          "const": "Row"
+        },
         "children": {
-          "description": "Either an explicit list of widget IDs for the children, or a template with a data binding to the list of children.",
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "description": "Component ID"
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "componentId": {
-                  "type": "string",
-                  "description": "The ID of a component."
-                },
-                "path": {
-                  "type": "string",
-                  "description": "A relative or absolute path in the data model."
-                }
-              },
-              "required": [
-                "componentId",
-                "path"
-              ]
-            }
-          ]
+          "description": "Defines the children. Use an array of strings for a fixed set of children, or a template object to generate children from a data list. Children cannot be defined inline, they must be referred to by ID.",
+          "$ref": "common_types.json#/$defs/ChildList"
         },
         "justify": {
           "type": "string",
+          "description": "Defines the arrangement of children along the main axis (horizontally). Use 'spaceBetween' to push items to the edges, or 'start'/'end'/'center' to pack them together.",
           "enum": [
-            "start",
             "center",
             "end",
-            "spaceBetween",
             "spaceAround",
+            "spaceBetween",
             "spaceEvenly",
+            "start",
             "stretch"
-          ]
+          ],
+          "default": "start"
         },
         "align": {
           "type": "string",
+          "description": "Defines the alignment of children along the cross axis (vertically). This is similar to the CSS 'align-items' property, but uses camelCase values (e.g., 'start').",
           "enum": [
             "start",
             "center",
             "end",
             "stretch"
-          ]
+          ],
+          "default": "stretch"
         },
-        "component": {
-          "type": "string",
-          "enum": [
-            "Row"
-          ]
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component",
         "children"
-      ],
-      "additionalProperties": true
+      ]
     },
     "Text": {
       "type": "object",
-      "description": "A block of styled text.",
       "properties": {
+        "component": {
+          "const": "Text"
+        },
         "text": {
-          "description": "While simple Markdown is supported (without HTML or image references), utilizing dedicated UI components is generally preferred for a richer and more structured presentation.",
-          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "The text content to display. While simple Markdown formatting is supported (i.e. without HTML, images, or links), utilizing dedicated UI components is generally preferred for a richer and more structured presentation."
         },
         "variant": {
           "type": "string",
           "description": "A hint for the base text style.",
           "enum": [
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
             "caption",
             "body"
-          ]
+          ],
+          "default": "body"
         },
-        "component": {
-          "type": "string",
-          "enum": [
-            "Text"
-          ]
+        "weight": {
+          "$ref": "#/$defs/Weight"
         }
       },
       "required": [
         "component",
         "text"
-      ],
-      "additionalProperties": true
+      ]
     },
     "SafetyBanner": {
       "type": "object",
@@ -443,19 +385,11 @@ abstract final class ClinicalCatalogDocument {
             "warning",
             "critical"
           ]
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "SafetyBanner"
-          ]
         }
       },
       "required": [
-        "component",
         "entries"
-      ],
-      "additionalProperties": true
+      ]
     },
     "TrendChart": {
       "type": "object",
@@ -514,20 +448,12 @@ abstract final class ClinicalCatalogDocument {
             "warning",
             "critical"
           ]
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "TrendChart"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "points"
-      ],
-      "additionalProperties": true
+      ]
     },
     "MeasurementRow": {
       "type": "object",
@@ -566,19 +492,11 @@ abstract final class ClinicalCatalogDocument {
               "value"
             ]
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "MeasurementRow"
-          ]
         }
       },
       "required": [
-        "component",
         "measurements"
-      ],
-      "additionalProperties": true
+      ]
     },
     "ImagingTimeline": {
       "type": "object",
@@ -630,20 +548,12 @@ abstract final class ClinicalCatalogDocument {
               "conclusion"
             ]
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "ImagingTimeline"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "events"
-      ],
-      "additionalProperties": true
+      ]
     },
     "XRayImage": {
       "type": "object",
@@ -668,22 +578,14 @@ abstract final class ClinicalCatalogDocument {
         "caption": {
           "type": "string",
           "description": "Optional line under the heading, e.g. \"No chest imaging since\"."
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "XRayImage"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "image",
         "date",
         "conclusion"
-      ],
-      "additionalProperties": true
+      ]
     },
     "MedicationTable": {
       "type": "object",
@@ -735,20 +637,12 @@ abstract final class ClinicalCatalogDocument {
               "schedule"
             ]
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "MedicationTable"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "medications"
-      ],
-      "additionalProperties": true
+      ]
     },
     "CareGapList": {
       "type": "object",
@@ -791,20 +685,12 @@ abstract final class ClinicalCatalogDocument {
               "due"
             ]
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "CareGapList"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "gaps"
-      ],
-      "additionalProperties": true
+      ]
     },
     "LabPanel": {
       "type": "object",
@@ -864,20 +750,12 @@ abstract final class ClinicalCatalogDocument {
         "normalSummary": {
           "type": "string",
           "description": "How the rest came back, e.g. \"7 other markers within range\". Only state a count the record supports."
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "LabPanel"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "flagged"
-      ],
-      "additionalProperties": true
+      ]
     },
     "BarComparison": {
       "type": "object",
@@ -932,20 +810,12 @@ abstract final class ClinicalCatalogDocument {
               "value"
             ]
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "BarComparison"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "entries"
-      ],
-      "additionalProperties": true
+      ]
     },
     "EcgStrip": {
       "type": "object",
@@ -975,19 +845,11 @@ abstract final class ClinicalCatalogDocument {
             "warning",
             "critical"
           ]
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "EcgStrip"
-          ]
         }
       },
       "required": [
-        "component",
         "rate"
-      ],
-      "additionalProperties": true
+      ]
     },
     "SplitSection": {
       "type": "object",
@@ -995,25 +857,17 @@ abstract final class ClinicalCatalogDocument {
       "properties": {
         "primary": {
           "description": "Ids of the sections in the wider left column.",
-          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/ChildList"
+          "$ref": "common_types.json#/$defs/ChildList"
         },
         "secondary": {
           "description": "Ids of the sections in the narrower right column.",
-          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/ChildList"
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "SplitSection"
-          ]
+          "$ref": "common_types.json#/$defs/ChildList"
         }
       },
       "required": [
-        "component",
         "primary",
         "secondary"
-      ],
-      "additionalProperties": true
+      ]
     },
     "SectionGrid": {
       "type": "object",
@@ -1021,7 +875,7 @@ abstract final class ClinicalCatalogDocument {
       "properties": {
         "sections": {
           "description": "Ids of the sections, in reading order.",
-          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/ChildList"
+          "$ref": "common_types.json#/$defs/ChildList"
         },
         "widths": {
           "type": "array",
@@ -1029,20 +883,12 @@ abstract final class ClinicalCatalogDocument {
           "items": {
             "type": "integer"
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "SectionGrid"
-          ]
         }
       },
       "required": [
-        "component",
         "sections",
         "widths"
-      ],
-      "additionalProperties": true
+      ]
     },
     "ChartGroup": {
       "type": "object",
@@ -1050,20 +896,12 @@ abstract final class ClinicalCatalogDocument {
       "properties": {
         "children": {
           "description": "Ids of the TrendChart components in this group, in ranking order.",
-          "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/ChildList"
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "ChartGroup"
-          ]
+          "$ref": "common_types.json#/$defs/ChildList"
         }
       },
       "required": [
-        "component",
         "children"
-      ],
-      "additionalProperties": true
+      ]
     },
     "FactList": {
       "type": "object",
@@ -1109,243 +947,631 @@ abstract final class ClinicalCatalogDocument {
               "label"
             ]
           }
-        },
-        "component": {
-          "type": "string",
-          "enum": [
-            "FactList"
-          ]
         }
       },
       "required": [
-        "component",
         "title",
         "entries"
-      ],
-      "additionalProperties": true
+      ]
     }
   },
-  "functions": [
-    {
-      "name": "required",
+  "functions": {
+    "required": {
+      "type": "object",
       "description": "Checks that the value is not null, undefined, or empty.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {}
+      "returnType": "validationResult",
+      "properties": {
+        "@call": {
+          "const": "required"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "description": "The value to check."
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "regex",
+    "regex": {
+      "type": "object",
       "description": "Checks that the value matches a regular expression string.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+      "returnType": "validationResult",
+      "properties": {
+        "@call": {
+          "const": "regex"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicString"
+            },
+            "pattern": {
+              "type": "string",
+              "description": "The regular expression to search for in the value. Uses the A2UI regex dialect: a portable subset of ECMAScript pattern syntax in Unicode mode with no flags. Matching is case-sensitive, '.' excludes line terminators, and '^' and '$' match only at the ends of the value. Backreferences, lookbehind, named groups and '\\p{...}' are not allowed. Patterns longer than 256 code points or that could backtrack catastrophically are rejected."
+            }
           },
-          "pattern": {
-            "type": "string"
-          }
+          "required": [
+            "value",
+            "pattern"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "length",
+    "length": {
+      "type": "object",
       "description": "Checks string length constraints.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {},
-          "min": {
-            "type": "integer"
+      "returnType": "validationResult",
+      "properties": {
+        "@call": {
+          "const": "length"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicString"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The minimum allowed length."
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The maximum allowed length."
+            }
           },
-          "max": {
-            "type": "integer"
-          }
+          "required": [
+            "value"
+          ],
+          "anyOf": [
+            {
+              "required": [
+                "min"
+              ]
+            },
+            {
+              "required": [
+                "max"
+              ]
+            }
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "any"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "numeric",
+    "numeric": {
+      "type": "object",
       "description": "Checks numeric range constraints.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+      "returnType": "validationResult",
+      "properties": {
+        "@call": {
+          "const": "numeric"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicNumber"
+            },
+            "min": {
+              "type": "number",
+              "description": "The minimum allowed value."
+            },
+            "max": {
+              "type": "number",
+              "description": "The maximum allowed value."
+            }
           },
-          "min": {
-            "type": "number"
-          },
-          "max": {
-            "type": "number"
-          }
+          "required": [
+            "value"
+          ],
+          "anyOf": [
+            {
+              "required": [
+                "min"
+              ]
+            },
+            {
+              "required": [
+                "max"
+              ]
+            }
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "email",
+    "email": {
+      "type": "object",
       "description": "Checks that the value is a valid email address.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
-          }
+      "returnType": "validationResult",
+      "properties": {
+        "@call": {
+          "const": "email"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicString"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "formatString",
-      "description": "Performs string interpolation of data model values and other functions in the\ncatalog functions list and returns the resulting string. The value string can\ncontain interpolated expressions in the ${expression} format. Supported\nexpression types include: JSON Pointer paths to the data model (e.g.,\n${/absolute/path} or ${relative/path}), and client-side function calls (e.g.,\n${now()}). Function arguments must be named (e.g.,\n${formatDate(value:${/currentDate}, format:'MM-dd')}). To include a literal ${\nsequence, escape it as \\${.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {}
+    "formatString": {
+      "type": "object",
+      "description": "Performs string interpolation of data model values and other functions in the catalog functions list and returns the resulting string. The value string can contain interpolated expressions in the `${expression}` format. Supported expression types include: JSON Pointer paths to the data model (e.g., `${/absolute/path}` or `${relative/path}`), and renderer-side function calls (e.g., `${now()}`). Function arguments must be named (e.g., `${formatDate(value:${/currentDate}, format:'MM-dd')}`). To include a literal `${` sequence, escape it as `\\${`.",
+      "returnType": "string",
+      "properties": {
+        "@call": {
+          "const": "formatString"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicString"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "string"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "openUrl",
-      "description": "Opens the specified URL in a browser or handler. This function has no return value.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
-          }
-        }
-      },
-      "returnType": "void"
-    },
-    {
-      "name": "formatNumber",
+    "formatNumber": {
+      "type": "object",
       "description": "Formats a number with the specified grouping and decimal precision.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+      "returnType": "string",
+      "properties": {
+        "@call": {
+          "const": "formatNumber"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicNumber",
+              "description": "The number to format."
+            },
+            "decimals": {
+              "$ref": "common_types.json#/$defs/DynamicNumber",
+              "description": "Optional. The number of decimal places to show. Defaults to 0 or 2 depending on locale."
+            },
+            "grouping": {
+              "$ref": "common_types.json#/$defs/DynamicBoolean",
+              "description": "Optional. If true, uses locale-specific grouping separators (e.g. '1,000'). If false, returns raw digits (e.g. '1000'). Defaults to true."
+            }
           },
-          "decimalPlaces": {
-            "type": "integer"
-          },
-          "useGrouping": {
-            "type": "boolean"
-          }
+          "required": [
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "string"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "formatCurrency",
+    "formatCurrency": {
+      "type": "object",
       "description": "Formats a number as a currency string.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+      "returnType": "string",
+      "properties": {
+        "@call": {
+          "const": "formatCurrency"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicNumber",
+              "description": "The monetary amount."
+            },
+            "currency": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "The ISO 4217 currency code (e.g., 'USD', 'EUR')."
+            },
+            "decimals": {
+              "$ref": "common_types.json#/$defs/DynamicNumber",
+              "description": "Optional. The number of decimal places to show. Defaults to 0 or 2 depending on locale."
+            },
+            "grouping": {
+              "$ref": "common_types.json#/$defs/DynamicBoolean",
+              "description": "Optional. If true, uses locale-specific grouping separators (e.g. '1,000'). If false, returns raw digits (e.g. '1000'). Defaults to true."
+            }
           },
-          "currencyCode": {
-            "type": "string"
-          }
+          "required": [
+            "currency",
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "string"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "formatDate",
+    "formatDate": {
+      "type": "object",
       "description": "Formats a timestamp into a string using a pattern.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {},
-          "pattern": {
-            "type": "string"
-          }
+      "returnType": "string",
+      "properties": {
+        "@call": {
+          "const": "formatDate"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicValue",
+              "description": "The date to format."
+            },
+            "format": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "A Unicode TR35 date pattern string.\n\nToken Reference:\n- Year: 'yy' (26), 'yyyy' (2026)\n- Month: 'M' (1), 'MM' (01), 'MMM' (Jan), 'MMMM' (January)\n- Day: 'd' (1), 'dd' (01), 'E' (Tue), 'EEEE' (Tuesday)\n- Hour (12h): 'h' (1-12), 'hh' (01-12) - requires 'a' for AM/PM\n- Hour (24h): 'H' (0-23), 'HH' (00-23) - Military Time\n- Minute: 'mm' (00-59)\n- Second: 'ss' (00-59)\n- Period: 'a' (AM/PM)\n\nExamples:\n- 'MMM dd, yyyy' -> 'Jan 16, 2026'\n- 'HH:mm' -> '14:30' (Military)\n- 'h:mm a' -> '2:30 PM'\n- 'EEEE, d MMMM' -> 'Friday, 16 January'"
+            }
+          },
+          "required": [
+            "format",
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "string"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "pluralize",
-      "description": "Returns a localized string based on the Common Locale Data Repository (CLDR) plural category of the count (zero, one, two, few, many, other). Requires an 'other' fallback.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {
-            "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+    "pluralize": {
+      "type": "object",
+      "description": "Returns a localized string based on the Common Locale Data Repository (CLDR) plural category of the count (zero, one, two, few, many, other). Requires an 'other' fallback. For English, just use 'one' and 'other'.",
+      "returnType": "string",
+      "properties": {
+        "@call": {
+          "const": "pluralize"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicNumber",
+              "description": "The numeric value used to determine the plural category."
+            },
+            "zero": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "String for the 'zero' category (e.g., 0 items)."
+            },
+            "one": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "String for the 'one' category (e.g., 1 item)."
+            },
+            "two": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "String for the 'two' category (used in Arabic, Welsh, etc.)."
+            },
+            "few": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "String for the 'few' category (e.g., small groups in Slavic languages)."
+            },
+            "many": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "String for the 'many' category (e.g., large groups in various languages)."
+            },
+            "other": {
+              "$ref": "common_types.json#/$defs/DynamicString",
+              "description": "The default/fallback string (used for general plural cases)."
+            }
           },
-          "zero": {
-            "type": "string"
-          },
-          "one": {
-            "type": "string"
-          },
-          "two": {
-            "type": "string"
-          },
-          "few": {
-            "type": "string"
-          },
-          "many": {
-            "type": "string"
-          },
-          "other": {
-            "type": "string"
-          }
+          "required": [
+            "value",
+            "other"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "string"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "and",
+    "openUrl": {
+      "type": "object",
+      "description": "Opens the specified URL in a browser or handler (requires user activation). This function has no return value.",
+      "returnType": "void",
+      "requiresUserActivation": true,
+      "properties": {
+        "@call": {
+          "const": "openUrl"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "description": "The URL to open.",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "format": "uri"
+                },
+                {
+                  "$ref": "common_types.json#/$defs/DataBinding"
+                },
+                {
+                  "$ref": "common_types.json#/$defs/FunctionCall"
+                }
+              ]
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "unevaluatedProperties": false
+        }
+      },
+      "required": [
+        "@call",
+        "args"
+      ]
+    },
+    "and": {
+      "type": "object",
       "description": "Performs a logical AND operation on a list of boolean values.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "values": {
-            "type": "array",
-            "items": {}
-          }
+      "returnType": "boolean",
+      "properties": {
+        "@call": {
+          "const": "and"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "values": {
+              "type": "array",
+              "description": "The list of boolean values to evaluate.",
+              "items": {
+                "$ref": "common_types.json#/$defs/DynamicBoolean"
+              },
+              "minItems": 2
+            }
+          },
+          "required": [
+            "values"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "or",
+    "or": {
+      "type": "object",
       "description": "Performs a logical OR operation on a list of boolean values.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "values": {
-            "type": "array",
-            "items": {}
-          }
+      "returnType": "boolean",
+      "properties": {
+        "@call": {
+          "const": "or"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "values": {
+              "type": "array",
+              "description": "The list of boolean values to evaluate.",
+              "items": {
+                "$ref": "common_types.json#/$defs/DynamicBoolean"
+              },
+              "minItems": 2
+            }
+          },
+          "required": [
+            "values"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     },
-    {
-      "name": "not",
+    "not": {
+      "type": "object",
       "description": "Performs a logical NOT operation on a boolean value.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "value": {}
+      "returnType": "boolean",
+      "properties": {
+        "@call": {
+          "const": "not"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "common_types.json#/$defs/DynamicBoolean",
+              "description": "The boolean value to negate."
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "unevaluatedProperties": false
         }
       },
-      "returnType": "boolean"
+      "required": [
+        "@call",
+        "args"
+      ]
     }
-  ]
+  },
+  "$defs": {
+    "Weight": {
+      "type": "number",
+      "description": "The relative weight of this component within a Row or Column. This is similar to the CSS 'flex-grow' property. Note: this may ONLY be set when the component is a direct descendant of a Row or Column."
+    },
+    "anyComponent": {
+      "oneOf": [
+        {
+          "$ref": "#/components/Button"
+        },
+        {
+          "$ref": "#/components/Card"
+        },
+        {
+          "$ref": "#/components/Column"
+        },
+        {
+          "$ref": "#/components/Divider"
+        },
+        {
+          "$ref": "#/components/Icon"
+        },
+        {
+          "$ref": "#/components/List"
+        },
+        {
+          "$ref": "#/components/Row"
+        },
+        {
+          "$ref": "#/components/Text"
+        },
+        {
+          "$ref": "#/components/SafetyBanner"
+        },
+        {
+          "$ref": "#/components/TrendChart"
+        },
+        {
+          "$ref": "#/components/MeasurementRow"
+        },
+        {
+          "$ref": "#/components/ImagingTimeline"
+        },
+        {
+          "$ref": "#/components/XRayImage"
+        },
+        {
+          "$ref": "#/components/MedicationTable"
+        },
+        {
+          "$ref": "#/components/CareGapList"
+        },
+        {
+          "$ref": "#/components/LabPanel"
+        },
+        {
+          "$ref": "#/components/BarComparison"
+        },
+        {
+          "$ref": "#/components/EcgStrip"
+        },
+        {
+          "$ref": "#/components/SplitSection"
+        },
+        {
+          "$ref": "#/components/SectionGrid"
+        },
+        {
+          "$ref": "#/components/ChartGroup"
+        },
+        {
+          "$ref": "#/components/FactList"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "component"
+      }
+    },
+    "anyFunction": {
+      "oneOf": [
+        {
+          "$ref": "#/functions/required"
+        },
+        {
+          "$ref": "#/functions/regex"
+        },
+        {
+          "$ref": "#/functions/length"
+        },
+        {
+          "$ref": "#/functions/numeric"
+        },
+        {
+          "$ref": "#/functions/email"
+        },
+        {
+          "$ref": "#/functions/formatString"
+        },
+        {
+          "$ref": "#/functions/formatNumber"
+        },
+        {
+          "$ref": "#/functions/formatCurrency"
+        },
+        {
+          "$ref": "#/functions/formatDate"
+        },
+        {
+          "$ref": "#/functions/pluralize"
+        },
+        {
+          "$ref": "#/functions/openUrl"
+        },
+        {
+          "$ref": "#/functions/and"
+        },
+        {
+          "$ref": "#/functions/or"
+        },
+        {
+          "$ref": "#/functions/not"
+        }
+      ]
+    }
+  }
 }
 ''';
 }

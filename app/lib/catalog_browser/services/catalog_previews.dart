@@ -1,40 +1,47 @@
 import 'dart:convert';
 
-import 'package:a2ui_core/a2ui_core.dart' as core;
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
+import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
 import 'package:collection/collection.dart';
-import 'package:genui/genui.dart';
 
 /// Draws each catalog component from its first example, on a surface named
 /// after the component.
 class CatalogPreviews._(
-  final SurfaceController _controller,
-  final Map<String, List<JsonMap>> _components,
+  final MessageProcessor<ComponentImplementation> _processor,
+  final Map<String, List<Map<String, Object?>>> _components,
 ) {
-  /// The component GenUI draws a surface from.
+  /// The wire version every preview surface is created as.
+  static final String _version = A2uiProtocolVersion.v1_0.jsonValue;
+
+  /// The component A2UI draws a surface's tree from.
   static const _rootId = 'root';
 
-  /// A2UI's type for a list of child ids.
+  /// A2UI's reference type for a list of child ids.
   static const _childListType = r'/$defs/ChildList';
+
+  /// Fires when a preview dispatches an action; the catalog page has no
+  /// agent to send it to.
+  EventSource<A2uiRendererAction> get onAction => _processor.model.onAction;
 
   /// Sends each example in [catalog] to a surface of its own.
   ///
   /// An example without a `root` gets its own component as the root, and
   /// the children it lists but lacks from the examples that define them.
-  factory of(Catalog catalog) {
-    final catalogId = ArgumentError.checkNotNull(
-      catalog.catalogId,
-      'catalog.catalogId',
-    );
+  /// A component with no example of its own (a kept basic component, say)
+  /// gets no surface; [surfaceOf] gives `null` for it.
+  factory of(CatalogImplementation catalog) {
     final examples = {
-      for (final item in catalog.items)
-        if (item.exampleData.firstOrNull case final example?)
-          item.name: (jsonDecode(example()) as List<Object?>)
-              .whereType<JsonMap>()
+      for (final item in catalog.components.values)
+        if (CatalogItemFactory.examples[item.name] case final example?)
+          item.name: (jsonDecode(example) as List<Object?>)
+              .whereType<Map<String, Object?>>()
               .toList(),
     };
     final childLists = {
-      for (final item in catalog.items) item.name: _childListKeysOf(item),
+      for (final item in catalog.components.values)
+        item.name: _childListKeysOf(item),
     };
     final components = {
       for (final MapEntry(key: name, value: example) in examples.entries)
@@ -44,32 +51,41 @@ class CatalogPreviews._(
           childLists,
         ),
     };
-    final controller = SurfaceController(catalogs: [catalog]);
+    final processor = MessageProcessor<ComponentImplementation>(
+      catalogs: [catalog],
+      validationConfig: ValidationConfig.relaxed,
+      reportErrorsOnly: true,
+    );
     for (final MapEntry(key: name, value: surface) in components.entries) {
-      controller
-        ..handleMessage(
-          core.CreateSurfaceMessage(surfaceId: name, catalogId: catalogId),
-        )
-        ..handleMessage(
-          core.UpdateComponentsMessage(surfaceId: name, components: surface),
-        );
+      processor.processMessages([
+        {
+          'version': _version,
+          'createSurface': {'surfaceId': name, 'catalogId': catalog.id},
+        },
+        {
+          'version': _version,
+          'updateComponents': {'surfaceId': name, 'components': surface},
+        },
+      ]);
     }
 
-    return CatalogPreviews._(controller, components);
+    return CatalogPreviews._(processor, components);
   }
 
-  /// The surface drawing [name]'s example.
-  SurfaceContext surfaceOf(String name) => _controller.contextFor(name);
+  /// The surface drawing [name]'s example, or `null` without one.
+  SurfaceModel<ComponentImplementation>? surfaceOf(String name) =>
+      _processor.model.getSurface(name);
 
   /// The components [name]'s surface was sent, as A2UI JSON.
-  List<JsonMap> componentsOf(String name) => _components[name] ?? const [];
+  List<Map<String, Object?>> componentsOf(String name) =>
+      _components[name] ?? const [];
 
   /// Releases the surfaces.
-  void dispose() => _controller.dispose();
+  void dispose() => _processor.dispose();
 
   /// The properties of [item] that list child ids as A2UI's `ChildList`.
-  static List<String> _childListKeysOf(CatalogItem item) {
-    final properties = item.dataSchema.value.readObject('properties');
+  static List<String> _childListKeysOf(ComponentImplementation item) {
+    final properties = item.schema.value.readObject('properties');
 
     return properties.keys
         .where(
@@ -83,7 +99,10 @@ class CatalogPreviews._(
 
   /// [components] with [name]'s own component as the root, unless one of
   /// them already is.
-  static List<JsonMap> _rooted(String name, List<JsonMap> components) {
+  static List<Map<String, Object?>> _rooted(
+    String name,
+    List<Map<String, Object?>> components,
+  ) {
     if (components.map(_idOf).contains(_rootId)) return components;
 
     final own = components.firstWhereOrNull(
@@ -100,9 +119,9 @@ class CatalogPreviews._(
   /// children those list.
   ///
   /// [childLists] holds each component type's child-list properties.
-  static List<JsonMap> _withChildren(
-    List<JsonMap> components,
-    Iterable<List<JsonMap>> examples,
+  static List<Map<String, Object?>> _withChildren(
+    List<Map<String, Object?>> components,
+    Iterable<List<Map<String, Object?>>> examples,
     Map<String, List<String>> childLists,
   ) {
     final ids = components.map(_idOf).toSet();
@@ -128,5 +147,6 @@ class CatalogPreviews._(
           );
   }
 
-  static String _idOf(JsonMap component) => component.readString('id');
+  static String _idOf(Map<String, Object?> component) =>
+      component.readString('id');
 }

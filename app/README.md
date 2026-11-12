@@ -2,7 +2,7 @@
 
 The Flutter app: today's patient list, the check-in, and the brief for the
 patient being seen, which the [brief agent](../brief_agent/README.md)
-composes and [`genui`](https://pub.dev/packages/genui) renders. 
+composes and [`a2ui_flutter`](https://pub.dev/packages/a2ui_flutter) renders.
 For an overview of the project and how its two parts fit together, see the
 [main README](../README.md).
 
@@ -37,6 +37,11 @@ and put the team's App Check debug token in it. Then:
 flutter pub get
 flutter run --dart-define-from-file=dart_defines.json
 ```
+
+By default this talks to the live `briefagent` function. Point it at another
+one instead with `--dart-define=BRIEF_AGENT_FUNCTION=briefagent-staging`, or
+at an arbitrary URL (a local `brief_agent/` run, say) with
+`--dart-define=BRIEF_AGENT_URL=http://localhost:8080/briefagent`.
 
 ### 4. Before you push
 

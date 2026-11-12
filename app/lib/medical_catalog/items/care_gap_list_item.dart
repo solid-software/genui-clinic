@@ -1,16 +1,17 @@
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/common/utils/json_reader.dart';
 import 'package:clinical_brief/medical_catalog/items/catalog_item_factory.dart';
+import 'package:clinical_brief/medical_catalog/items/item_context.dart';
 import 'package:clinical_brief/medical_catalog/models/care_gap.dart';
 import 'package:clinical_brief/medical_catalog/widgets/care_gaps/care_gap_list.dart';
 import 'package:clinical_brief/medical_catalog/widgets/layout/section_card.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The `CareGapList` component, drawn as [CareGapList].
 abstract final class CareGapListItem {
   /// The catalog item.
-  static final CatalogItem item = CatalogItemFactory.section(
+  static final ComponentImplementation item = CatalogItemFactory.section(
     name: 'CareGapList',
     schema: S.object(
       description:
@@ -68,7 +69,7 @@ abstract final class CareGapListItem {
       ]
     ''';
 
-  static Widget _build(CatalogItemContext _, JsonMap data) => SectionCard(
+  static Widget _build(ItemContext _, Map<String, Object?> data) => SectionCard(
     icon: Icons.pending_actions_outlined,
     title: data.readString('title'),
     child: CareGapList(

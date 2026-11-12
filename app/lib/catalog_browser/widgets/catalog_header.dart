@@ -5,7 +5,6 @@ import 'package:clinical_brief/common/widgets/pill_chip.dart';
 import 'package:clinical_brief/theme/app_spacing.dart';
 import 'package:clinical_brief/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
-import 'package:genui/genui.dart';
 
 /// The page's title, what the page shows, and the catalog's id and JSON.
 class const CatalogHeader({
@@ -15,7 +14,7 @@ class const CatalogHeader({
   required final String catalogId,
 
   /// The catalog's JSON, as the brief agent is told of it.
-  required final JsonMap json,
+  required final Map<String, Object?> json,
 }) extends StatelessWidget {
   static const _introMaxWidth = 640.0;
 

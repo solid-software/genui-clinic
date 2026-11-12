@@ -1,49 +1,68 @@
 import 'dart:async';
 
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/brief_composer/brief_composer.dart';
 import 'package:clinical_brief/brief_composer/brief_transport.dart';
+import 'package:clinical_brief/brief_composer/conversation_event.dart';
 import 'package:clinical_brief/brief_composer/models/brief_turn.dart';
 import 'package:clinical_brief/brief_composer/services/brief_agent_client.dart';
 import 'package:clinical_brief/brief_composer/unrenderable_brief_exception.dart';
 import 'package:clinical_brief/check_in/models/clinical_record.dart';
 import 'package:clinical_brief/check_in/models/complaint.dart';
 import 'package:clinical_brief/check_in/models/patient.dart';
+import 'package:clinical_brief/common/logging/app_logger.dart';
 import 'package:clinical_brief/medical_catalog/medical_catalog.dart';
 import 'package:clinical_brief/medical_catalog/surface_readiness.dart';
-import 'package:genui/genui.dart';
 
-/// [BriefComposer] built on the GenUI runtime, with the brief agent writing
+/// [BriefComposer] built on the A2UI runtime, with the brief agent writing
 /// the briefs.
 class GenUiBriefComposer._(
-  final Conversation _conversation,
+  /// The processor that owns the surfaces this composer produces.
+  @override final MessageProcessor<ComponentImplementation> surfaceHost,
   final BriefTransport _transport,
-
-  /// The controller that owns the surfaces this composer produces.
-  @override final SurfaceController surfaceHost,
+  final List<Subscription> _subscriptions,
 ) implements BriefComposer {
+  /// The wire version every surface this composer creates is rendered as.
+  static final String _version = A2uiProtocolVersion.v1_0.jsonValue;
+
+  final _log = AppLogger.of('GenUiBriefComposer');
+  final _readySurfaceIds = <String>{};
+  final _events = StreamController<ConversationEvent>.broadcast();
   var _inFlight = Future<void>.value();
   var _isDisposed = false;
   ({Patient patient, ClinicalRecord record})? _consultation;
 
   @override
-  Stream<ConversationEvent> get events => _conversation.events;
+  Stream<ConversationEvent> get events => _events.stream;
 
   /// Starts a composer for one consultation, asking [agent] for each brief.
   ///
   /// Every request names the catalog this app renders, which the agent
   /// registered from the same definition (see test/agent_catalog_test.dart).
   factory GenUiBriefComposer.start(BriefAgentClient agent) {
-    final controller = SurfaceController(catalogs: [MedicalCatalog.build()]);
-    final transport = BriefTransport(
-      agent,
-      controller.clientCapabilities.toJson(),
+    final processor = MessageProcessor<ComponentImplementation>(
+      catalogs: [MedicalCatalog.build()],
+      validationConfig: ValidationConfig.relaxed,
+      reportErrorsOnly: true,
     );
+    final capabilities = processor
+        .getRendererCapabilities(
+          const CapabilitiesOptions(versions: [A2uiProtocolVersion.v1_0]),
+        )
+        .toJson();
+    final composer = GenUiBriefComposer._(
+      processor,
+      BriefTransport(agent, capabilities, processor.processMessages),
+      [],
+    );
+    composer._subscriptions.addAll([
+      processor.model.onAction.subscribe(composer._sendAction),
+      processor.model.onError.subscribe(composer._onError),
+      processor.model.onSurfaceDeleted.subscribe(composer._onSurfaceDeleted),
+    ]);
 
-    return GenUiBriefComposer._(
-      Conversation(controller: controller, transport: transport),
-      transport,
-      controller,
-    );
+    return composer;
   }
 
   @override
@@ -82,7 +101,7 @@ class GenUiBriefComposer._(
     _transport.dispose();
     // Released once the turn in flight ends; the closed transport drops its
     // brief.
-    _inFlight.whenComplete(_disposeConversation).ignore();
+    _inFlight.whenComplete(_disposeSurfaces).ignore();
   }
 
   /// Sends [turn] and throws if the brief that comes back cannot be drawn.
@@ -90,32 +109,69 @@ class GenUiBriefComposer._(
   /// The agent already asks the model again for a brief it cannot compile.
   Future<void> _requestBrief(BriefTurn turn) async {
     if (_isDisposed) return;
-    var isDrawn = false;
-    final subscription = _conversation.events.listen(
-      (event) => isDrawn |= _drawsBrief(event),
-    );
-    try {
-      _inFlight = _transport.send(turn);
-      await _inFlight;
-      // Let the messages reach the controller before reading the outcome.
-      await Future<void>.delayed(Duration.zero);
-    } finally {
-      await subscription.cancel();
-    }
-    if (!isDrawn && !_isDisposed) {
+    _inFlight = _transport.send(turn);
+    await _inFlight;
+    if (_isDisposed) return;
+    if (!_reportReadySurfaces()) {
       throw const UnrenderableBriefException();
     }
   }
 
-  void _disposeConversation() {
-    _conversation.dispose();
+  void _disposeSurfaces() {
+    for (final subscription in _subscriptions) {
+      subscription.unsubscribe();
+    }
     surfaceHost.dispose();
+    unawaited(_events.close());
   }
 
-  /// Whether [event] brings a surface with a root component.
-  static bool _drawsBrief(ConversationEvent event) => switch (event) {
-    ConversationSurfaceAdded(:final definition) ||
-    ConversationComponentsUpdated(:final definition) => definition.isRenderable,
-    _ => false,
-  };
+  void _sendAction(A2uiRendererAction action) {
+    unawaited(
+      _transport.send(
+        BriefTurn.rendererEvent(
+          ActionMessage(version: _version, action: action).toJson(),
+        ),
+      ),
+    );
+  }
+
+  /// Logs an error found while rendering a brief.
+  ///
+  /// The agent already checked the brief against the catalog before sending
+  /// it, so asking it again here could loop; only [events] hears about it.
+  void _onError(A2uiRendererError error) {
+    _log.warning(
+      'The brief surface reported a problem: ${error.code} ${error.message}',
+    );
+    if (!_isDisposed) {
+      _events.add(ConversationError(error));
+    }
+  }
+
+  void _onSurfaceDeleted(String surfaceId) {
+    _readySurfaceIds.remove(surfaceId);
+    if (!_isDisposed) {
+      _events.add(ConversationSurfaceRemoved(surfaceId));
+    }
+  }
+
+  /// Reports every surface that became renderable since the brief before,
+  /// and whether any surface can be drawn now.
+  ///
+  /// A whole brief is applied to [surfaceHost] in one synchronous batch (see
+  /// [BriefTransport]), so every surface it creates already has its root by
+  /// the time its turn's [Future] completes; nothing replaces the
+  /// "components updated" event a streamed reply would need.
+  bool _reportReadySurfaces() {
+    var isDrawn = false;
+    for (final surface in surfaceHost.model.allSurfaces) {
+      if (!surface.isRenderable) continue;
+      isDrawn = true;
+      if (_readySurfaceIds.add(surface.id) && !_isDisposed) {
+        _events.add(ConversationSurfaceReady(surface.id));
+      }
+    }
+
+    return isDrawn;
+  }
 }

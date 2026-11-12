@@ -1,16 +1,17 @@
 import 'dart:async';
 
+import 'package:a2ui_core/a2ui_core.dart';
+import 'package:a2ui_flutter/a2ui_flutter.dart';
 import 'package:clinical_brief/brief_composer/brief_composer.dart';
 import 'package:clinical_brief/brief_composer/brief_limit_exception.dart';
+import 'package:clinical_brief/brief_composer/conversation_event.dart';
 import 'package:clinical_brief/brief_composer/models/brief_limit.dart';
 import 'package:clinical_brief/check_in/models/clinical_record.dart';
 import 'package:clinical_brief/check_in/models/complaint.dart';
 import 'package:clinical_brief/check_in/models/patient.dart';
 import 'package:clinical_brief/check_in/repository/patient_repository.dart';
 import 'package:clinical_brief/common/logging/app_logger.dart';
-import 'package:clinical_brief/medical_catalog/surface_readiness.dart';
 import 'package:flutter/foundation.dart';
-import 'package:genui/genui.dart';
 import 'package:logging/logging.dart';
 
 /// Drives one consultation: the chart, the brief and the surface on screen.
@@ -46,7 +47,8 @@ class DashboardController extends ChangeNotifier {
   ClinicalRecord? get record => _record;
 
   /// Where the dashboard reads surfaces from.
-  SurfaceHost get surfaceHost => _composer.surfaceHost;
+  MessageProcessor<ComponentImplementation> get surfaceHost =>
+      _composer.surfaceHost;
 
   /// The newest surface that can draw, or `null` before the first one.
   ///
@@ -182,27 +184,13 @@ class DashboardController extends ChangeNotifier {
     _limit = null;
   }
 
-  void _showWhenRenderable(String surfaceId, SurfaceDefinition definition) {
-    if (!definition.isRenderable || _surfaceIds.contains(surfaceId)) {
-      return;
-    }
-
-    _surfaceIds.add(surfaceId);
-    notifyListeners();
-  }
-
   void _onConversationEvent(ConversationEvent event) {
     switch (event) {
-      case ConversationSurfaceAdded(
-        :final String surfaceId,
-        :final SurfaceDefinition definition,
-      ):
-        _showWhenRenderable(surfaceId, definition);
-      case ConversationComponentsUpdated(
-        :final String surfaceId,
-        :final SurfaceDefinition definition,
-      ):
-        _showWhenRenderable(surfaceId, definition);
+      case ConversationSurfaceReady(:final String surfaceId):
+        if (!_surfaceIds.contains(surfaceId)) {
+          _surfaceIds.add(surfaceId);
+          notifyListeners();
+        }
       case ConversationSurfaceRemoved(:final String surfaceId):
         _surfaceIds.remove(surfaceId);
         notifyListeners();
@@ -210,9 +198,6 @@ class DashboardController extends ChangeNotifier {
         _log.severe('Model reported an error', error);
         _errorMessage = _failureMessage;
         notifyListeners();
-      case ConversationContentReceived():
-      case ConversationWaiting():
-        break;
     }
   }
 }

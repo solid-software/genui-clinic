@@ -55,7 +55,13 @@ Each program has its own README, with how to run, build, and deploy it:
 ## Deploying
 
 - Merging to `main` deploys the app to https://genui-clinic.solid.software/.
-- The agent is deployed by hand before any app version that needs it. See [brief_agent/README.md](brief_agent/README.md).
+- Pushing to `staging` deploys the app to https://clinical-brief-staging.web.app,
+  a second Hosting site in the same Firebase project, for testing before a
+  merge to `main`. It talks to its own `briefagent-staging` Cloud Function, so
+  staging testing never touches the live site or the live agent.
+- The agent (both `briefagent` and `briefagent-staging`) is deployed by hand
+  before any app version that needs it. See
+  [brief_agent/README.md](brief_agent/README.md).
 
 ## Solid Software
 

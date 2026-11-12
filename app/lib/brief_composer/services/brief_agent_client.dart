@@ -11,7 +11,13 @@ import 'package:firebase_core/firebase_core.dart';
 class BriefAgentClient._(final HttpsCallable _callable) {
   /// Replaces the agent's URL, e.g. with the Functions emulator's.
   static const _urlOverride = String.fromEnvironment('BRIEF_AGENT_URL');
-  static const _functionName = 'briefagent';
+
+  /// The name of the deployed function to call, e.g. `briefagent-staging`
+  /// for a staging build.
+  static const _functionName = String.fromEnvironment(
+    'BRIEF_AGENT_FUNCTION',
+    defaultValue: 'briefagent',
+  );
   static const _region = 'europe-west1';
 
   /// The code of the agent's answer to a user over their limit.

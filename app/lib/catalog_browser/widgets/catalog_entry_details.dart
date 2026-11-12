@@ -36,12 +36,12 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
     with AutomaticKeepAliveClientMixin<CatalogEntryDetails> {
   static const _revealDuration = Duration(milliseconds: 300);
 
+  Subscription? _actions;
+
   /// Kept alive: the lazy list would dispose it once scrolled past, and
   /// built again it would scroll itself back into view.
   @override
   bool get wantKeepAlive => true;
-
-  late final Subscription _actions;
 
   @override
   void initState() {
@@ -49,12 +49,6 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
     _actions = widget.previews.onAction.subscribe(_onAction);
     // The component open before closes, which can move this one out of view.
     WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
-  }
-
-  @override
-  void dispose() {
-    _actions.unsubscribe();
-    super.dispose();
   }
 
   @override
@@ -108,6 +102,12 @@ class _CatalogEntryDetailsState extends State<CatalogEntryDetails>
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _actions?.unsubscribe();
+    super.dispose();
   }
 
   void _onAction(A2uiRendererAction action) {

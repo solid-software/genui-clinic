@@ -21,7 +21,6 @@ class GenUiBriefComposer._(
   /// The processor that owns the surfaces this composer produces.
   @override final MessageProcessor<ComponentImplementation> surfaceHost,
   final BriefTransport _transport,
-  final StreamController<ConversationEvent> _events,
   final List<Subscription> _subscriptions,
 ) implements BriefComposer {
   /// The wire version every surface this composer creates is rendered as.
@@ -29,6 +28,7 @@ class GenUiBriefComposer._(
 
   final _log = AppLogger.of('GenUiBriefComposer');
   final _readySurfaceIds = <String>{};
+  final _events = StreamController<ConversationEvent>.broadcast();
   var _inFlight = Future<void>.value();
   var _isDisposed = false;
   ({Patient patient, ClinicalRecord record})? _consultation;
@@ -51,11 +51,9 @@ class GenUiBriefComposer._(
           const CapabilitiesOptions(versions: [A2uiProtocolVersion.v1_0]),
         )
         .toJson();
-    final events = StreamController<ConversationEvent>.broadcast();
     final composer = GenUiBriefComposer._(
       processor,
       BriefTransport(agent, capabilities, processor.processMessages),
-      events,
       [],
     );
     composer._subscriptions.addAll([

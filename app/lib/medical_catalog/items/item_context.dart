@@ -5,9 +5,6 @@ import 'package:flutter/widgets.dart';
 /// The resolved node a medical catalog item's builder reads from, and
 /// builds its widget with.
 class ItemContext {
-  /// Creates an item context for one resolved [node].
-  const ItemContext(this.context, this.node, this.props, this.buildChild);
-
   /// The build context the component is drawn in.
   final BuildContext context;
 
@@ -29,6 +26,9 @@ class ItemContext {
     for (final String key in props.keys)
       if (!_isChildRef(props.value(key))) key: props.value(key),
   };
+
+  /// Creates an item context for one resolved [node].
+  const ItemContext(this.context, this.node, this.props, this.buildChild);
 
   static bool _isChildRef(Object? value) => switch (value) {
     ComponentNode<ComponentImplementation>() => true,

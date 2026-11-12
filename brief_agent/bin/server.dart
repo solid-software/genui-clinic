@@ -1,8 +1,4 @@
-import 'package:brief_agent/brief/brief_agent.dart';
-import 'package:brief_agent/brief/brief_function.dart';
-import 'package:brief_agent/usage_limit/usage_limit_enforcer.dart';
-import 'package:brief_agent/gemini/gemini_client.dart';
-import 'package:brief_agent/usage_limit/usage_repository.dart';
+import 'package:brief_agent/brief_runner.dart';
 import 'package:firebase_functions/firebase_functions.dart';
 
 /// Both functions' options: only the app, attested by App Check, may spend
@@ -23,31 +19,17 @@ const _options = CallableOptions(
 /// A function's URL is
 /// `https://<name>-<project number>.europe-west1.run.app`.
 Future<void> main() => runFunctions((firebase) {
-  final brief = BriefFunction(BriefAgent(GeminiClient.forThisProject()));
-  final limit = UsageLimitEnforcer(
-    UsageRepository(firebase.adminApp.firestore()),
-  );
-
-  Future<JsonResult> answer(CallableRequest request) async {
-    final CallableRequest(:auth, :data) = request;
-
-    if (auth?.uid case final id?) {
-      await limit.gate(id);
-
-      return brief.answer(data);
-    } else {
-      throw HttpResponseException.unauthorized();
-    }
-  }
+  final runner = BriefRunner(firebase);
 
   firebase.https.onCall(
     name: 'briefagent',
     options: _options,
-    (request, _) => answer(request),
+    (request, _) => runner.answer(request: request),
   );
+
   firebase.https.onCall(
     name: 'briefagent-staging',
     options: _options,
-    (request, _) => answer(request),
+    (request, _) => runner.answer(request: request, gate: false),
   );
 });

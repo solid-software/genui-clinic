@@ -22,21 +22,6 @@ abstract final class MedicalCatalog {
   /// The id the catalog is registered under.
   static const String _id = 'com.clinicalbrief.catalog.v1';
 
-  /// The basic components this catalog drops: the brief agent never needs
-  /// them, so the model spends its effort on the medical cards instead.
-  static const Set<String> _droppedBasics = {
-    'AudioPlayer',
-    'Video',
-    'Image',
-    'Slider',
-    'DateTimeInput',
-    'TextField',
-    'CheckBox',
-    'Modal',
-    'Tabs',
-    'ChoicePicker',
-  };
-
   /// Builds the catalog.
   ///
   /// The app names it in every request to the brief agent; how a brief is
@@ -46,10 +31,18 @@ abstract final class MedicalCatalog {
 
     return basicCatalog().derive(
       catalogId: _id,
-      components: [
-        for (final component in BasicComponents.all)
-          if (!_droppedBasics.contains(component.name)) component.name,
-      ],
+      components: BasicComponents.all.map((c) => c.name).toSet().difference({
+        BasicComponents.audioPlayer.name,
+        BasicComponents.video.name,
+        BasicComponents.image.name,
+        BasicComponents.slider.name,
+        BasicComponents.dateTimeInput.name,
+        BasicComponents.textField.name,
+        BasicComponents.checkBox.name,
+        BasicComponents.modal.name,
+        BasicComponents.tabs.name,
+        BasicComponents.choicePicker.name,
+      }),
       addComponents: [
         SafetyBannerItem.item,
         TrendChartItem.item,
@@ -70,10 +63,7 @@ abstract final class MedicalCatalog {
     );
   }
 
-  /// Examples for the kept basic components, since `basicCatalog()` carries
-  /// none of its own (unlike genui's old `BasicCatalogItems`, which bundled
-  /// one with every item). The catalog browser's preview feature reads
-  /// [CatalogItemFactory.examples], same as the medical cards' own examples.
+  /// Examples for the kept basic components for catalog browser.
   static void _registerBasicExamples() {
     CatalogItemFactory.examples.addAll(const {
       'Divider': '[{"id": "divider", "component": "Divider"}]',

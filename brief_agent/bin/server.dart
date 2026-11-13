@@ -30,6 +30,6 @@ Future<void> main() => runFunctions((firebase) {
   firebase.https.onCall(
     name: 'briefagent-staging',
     options: _options,
-    (request, _) => runner.answer(request: request, gate: false),
+    (request, _) => runner.answer(request: request),
   );
 });
